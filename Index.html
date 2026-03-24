@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="theme-color" content="#1a2744">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Representantes">
+<title>Captura · Representantes de Casilla</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --navy:#1a2744;--navy-d:#0f1829;--red:#c8102e;--red-bg:#fdecea;
+  --green:#1a7a4a;--green-bg:#e8f5ee;--amber:#d97706;--amber-bg:#fef3c7;
+  --bg:#eef1f8;--surface:#fff;--border:#e2e8f0;
+  --text:#1a2033;--muted:#64748b;--light:#94a3b8;
+  --r:12px;--rs:8px;
+  --fh:'Barlow Condensed',sans-serif;--fb:'Barlow',sans-serif;--fm:'JetBrains Mono',monospace;
+}
+html,body{height:100%;overflow:hidden;background:var(--navy)}
+body{font-family:var(--fb);color:var(--text);font-size:15px;line-height:1.5}
+#app{display:flex;flex-direction:column;height:100%;max-width:500px;margin:0 auto;background:var(--bg);overflow:hidden}
+
+/* HEADER */
+.hdr{background:var(--navy);padding:env(safe-area-inset-top,0) 0 0;flex-shrink:0}
+.hdr-inner{display:flex;align-items:center;padding:12px 16px;gap:10px}
+.hdr-logo{width:34px;height:34px;background:var(--red);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hdr-logo svg{width:18px;height:18px}
+.hdr-titles{flex:1;min-width:0}
+.hdr-titles h1{font-family:var(--fh);font-size:17px;font-weight:700;letter-spacing:.2px;line-height:1.1;color:#fff}
+.hdr-titles p{font-size:11px;color:rgba(255,255,255,.55);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sync-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:20px;padding:6px 12px;font-size:12px;font-family:var(--fb);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;flex-shrink:0}
+.sync-btn svg{width:13px;height:13px;flex-shrink:0}
+.sync-btn.spinning svg{animation:spin .7s linear infinite}
+.sync-btn .sbadge{background:var(--red);border-radius:10px;min-width:18px;height:18px;font-size:10px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.screen-nav{display:flex;background:var(--navy-d);padding:0 4px;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.screen-nav::-webkit-scrollbar{display:none}
+.nav-tab{flex:1;min-width:58px;padding:9px 2px 7px;text-align:center;color:rgba(255,255,255,.45);font-size:10px;font-weight:700;font-family:var(--fh);letter-spacing:.6px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;text-transform:uppercase;white-space:nowrap}
+.nav-tab svg{display:block;margin:0 auto 3px;width:17px;height:17px;opacity:.55}
+.nav-tab.active{color:#fff;border-bottom-color:var(--red)}
+.nav-tab.active svg{opacity:1}
+
+/* SCREENS */
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;display:none}
+.screen.active{display:block}
+
+/* DASHBOARD */
+.dash-hero{background:var(--navy);padding:20px 16px 24px;color:#fff;position:relative;overflow:hidden}
+.dash-hero::before{content:'';position:absolute;right:-30px;top:-30px;width:160px;height:160px;border:40px solid rgba(255,255,255,.04);border-radius:50%}
+.dash-muni{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.dash-total{font-family:var(--fh);font-size:58px;font-weight:700;line-height:1;color:#fff}
+.dash-total-lbl{font-size:13px;color:rgba(255,255,255,.6);margin-top:2px}
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:16px;margin-top:-10px}
+.stat-card{background:var(--surface);border-radius:var(--rs);padding:14px 10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.stat-val{font-family:var(--fh);font-size:30px;font-weight:700;line-height:1}
+.stat-val.g{color:var(--green)}.stat-val.a{color:var(--amber)}.stat-val.r{color:var(--red)}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.sync-area{padding:0 16px 8px}
+.big-sync{width:100%;background:var(--navy);color:#fff;border:none;border-radius:var(--rs);padding:15px;font-size:14px;font-weight:600;font-family:var(--fb);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .2s}
+.big-sync svg{width:17px;height:17px}
+.big-sync.pending{background:var(--red)}
+.sec-lbl{padding:12px 16px 6px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.cov-list{padding:0 16px}
+.cov-item{background:var(--surface);border-radius:var(--rs);padding:11px 14px;margin-bottom:7px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;align-items:center;gap:10px}
+.cov-sec{font-family:var(--fh);font-size:13px;font-weight:700;background:var(--navy);color:#fff;border-radius:4px;padding:2px 8px;flex-shrink:0}
+.cov-bar-w{flex:1}
+.cov-bar-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px}
+.cov-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.cov-fill{height:100%;background:var(--green);border-radius:2px;transition:width .4s}
+
+/* FORM */
+.form-hdr{padding:18px 16px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.form-hdr h2{font-family:var(--fh);font-size:22px;font-weight:700;color:var(--navy)}
+.form-hdr p{font-size:12px;color:var(--muted);margin-top:2px}
+.step-dots{display:flex;gap:6px;margin-top:10px}
+.sdot{width:8px;height:8px;border-radius:4px;background:var(--border);transition:all .25s}
+.sdot.active{width:24px;background:var(--navy)}
+.sdot.done{background:var(--green)}
+.step{display:none;padding:16px 16px 80px}
+.step.active{display:block}
+
+/* FIELDS */
+.fld{margin-bottom:15px}
+.fld label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.fld input,.fld select,.fld textarea{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rs);padding:11px 14px;font-size:15px;font-family:var(--fb);color:var(--text);outline:none;transition:border .15s;-webkit-appearance:none;appearance:none}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,39,68,.08)}
+.fld input.ok{border-color:var(--green)}.fld input.bad{border-color:var(--red);background:#fff9f9}
+.fld .hint{font-size:11px;color:var(--muted);margin-top:4px}
+.fld .errmsg{font-size:11px;color:var(--red);margin-top:4px;font-weight:600;display:none}
+.fld .errmsg.on{display:block}
+.fld .cnt{font-size:11px;color:var(--light);text-align:right;margin-top:3px;font-family:var(--fm)}
+.fld select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+.fld textarea{min-height:75px;resize:vertical}
+
+/* SEARCH */
+.srch-wrap{position:relative}
+.srch-wrap input{padding-left:38px}
+.srch-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.srch-ico svg{width:15px;height:15px}
+.srch-res{background:var(--surface);border:1.5px solid var(--navy);border-top:none;border-radius:0 0 var(--rs) var(--rs);max-height:190px;overflow-y:auto;display:none;z-index:10;position:relative}
+.srch-res.open{display:block}
+.srch-item{padding:11px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.srch-item:last-child{border-bottom:none}
+.srch-item:hover{background:var(--bg)}
+.sec-badge{background:var(--navy);color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:700;font-family:var(--fh);flex-shrink:0}
+.srch-item .sub{font-size:11px;color:var(--muted)}
+
+/* CASILLA GRID */
+.cas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:7px;margin-top:4px}
+.cas-chip{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rs);padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+.cas-chip:hover{border-color:var(--navy)}
+.cas-chip.sel{border-color:var(--navy);background:var(--navy);color:#fff}
+.cas-chip.has{border-color:var(--amber);border-style:dashed}
+.cas-chip .cid{font-family:var(--fh);font-size:17px;font-weight:700}
+.cas-chip .ctp{font-size:9px;color:var(--muted);margin-top:1px}
+.cas-chip.sel .ctp{color:rgba(255,255,255,.65)}
+.cas-chip .crep{font-size:9px;color:var(--amber);margin-top:2px}
+
+/* ROL */
+.rol-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rol-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rs);padding:13px 12px;cursor:pointer;transition:all .15s}
+.rol-card:hover{border-color:var(--navy)}
+.rol-card.sel{border-color:var(--navy);background:#f0f4ff}
+.rol-card h4{font-family:var(--fh);font-size:15px;font-weight:700;color:var(--navy)}
+.rol-card p{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* PARTIDO */
+.par-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:7px}
+.par-chip{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rs);padding:9px 6px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;font-family:var(--fh);transition:all .15s}
+.par-chip:hover{border-color:var(--navy)}
+.par-chip.sel{border-color:var(--navy);background:var(--navy);color:#fff}
+
+/* CONFIRM CARD */
+.cc{background:var(--surface);border-radius:var(--r);overflow:hidden;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.cc-hdr{background:var(--navy);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:8px}
+.cc-hdr svg{width:17px;height:17px;flex-shrink:0}
+.cc-hdr h3{font-family:var(--fh);font-size:16px;font-weight:700}
+.cc-row{display:flex;align-items:flex-start;padding:9px 16px;border-bottom:1px solid var(--border);gap:10px}
+.cc-row:last-child{border-bottom:none}
+.cc-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;min-width:78px;padding-top:2px;flex-shrink:0}
+.cc-val{font-size:14px;font-weight:500;color:var(--text)}
+.cc-val.mono{font-family:var(--fm);font-size:13px;letter-spacing:.3px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:13px 18px;border-radius:var(--rs);font-size:15px;font-weight:600;font-family:var(--fb);border:none;cursor:pointer;transition:all .15s;width:100%}
+.btn svg{width:16px;height:16px;flex-shrink:0}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:active{transform:scale(.98)}
+.btn-secondary{background:var(--surface);color:var(--navy);border:1.5px solid var(--border)}
+.btn-success{background:var(--green);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+
+/* CONTEXT BANNER */
+.ctx-banner{background:var(--navy);border-radius:var(--rs);padding:10px 14px;margin-bottom:14px;color:#fff;font-size:13px;display:flex;align-items:center;gap:8px}
+.ctx-banner svg{width:13px;height:13px;opacity:.7;flex-shrink:0}
+.ctx-banner .change{margin-left:auto;opacity:.65;font-size:11px;cursor:pointer}
+.ctx-strong{font-family:var(--fh);font-size:16px;font-weight:700}
+
+/* SUCCESS NOTICE */
+.ok-notice{background:var(--green-bg);border-radius:var(--rs);padding:11px 14px;display:flex;align-items:center;gap:9px;color:var(--green);font-size:13px;font-weight:600;margin-bottom:14px}
+.ok-notice svg{width:17px;height:17px;flex-shrink:0}
+
+/* REGISTROS */
+.reg-item{background:var(--surface);border-radius:var(--rs);padding:13px;margin:0 16px 8px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;align-items:flex-start;gap:11px}
+.reg-av{width:38px;height:38px;border-radius:19px;background:var(--navy);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;font-family:var(--fh);flex-shrink:0}
+.reg-info{flex:1;min-width:0}
+.reg-name{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.reg-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.reg-ine{font-size:10px;color:var(--light);font-family:var(--fm);margin-top:2px}
+.reg-right{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+.bp{background:var(--amber-bg);color:var(--amber)}
+.bs{background:var(--green-bg);color:var(--green)}
+.be{background:var(--red-bg);color:var(--red)}
+.cas-lbl{font-size:11px;font-weight:700;font-family:var(--fh);color:var(--muted)}
+.dt-lbl{font-size:10px;color:var(--light)}
+
+/* CONFIG */
+.cfg-s{margin:16px}
+.cfg-card{background:var(--surface);border-radius:var(--r);box-shadow:0 1px 4px rgba(0,0,0,.07);padding:16px;margin-bottom:12px}
+.cfg-card h3{font-family:var(--fh);font-size:16px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.cfg-card h3 svg{width:17px;height:17px;color:var(--muted)}
+
+/* IMPORT ZONE */
+.imp-zone{border:2px dashed var(--border);border-radius:var(--rs);padding:20px;text-align:center;cursor:pointer;transition:all .15s}
+.imp-zone:hover{border-color:var(--navy);background:#f8faff}
+.imp-zone svg{width:28px;height:28px;color:var(--light);margin:0 auto 8px;display:block}
+.imp-zone strong{display:block;font-size:14px;color:var(--text);margin-bottom:3px}
+.imp-zone p{font-size:12px;color:var(--muted)}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:7px;padding:11px 16px;overflow-x:auto;scrollbar-width:none;background:var(--surface);border-bottom:1px solid var(--border)}
+.filter-bar::-webkit-scrollbar{display:none}
+.fchip{flex-shrink:0;background:transparent;border:1px solid var(--border);border-radius:15px;padding:5px 13px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s}
+.fchip.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 24px;color:var(--muted)}
+.empty svg{width:44px;height:44px;margin:0 auto 14px;opacity:.25;display:block}
+.empty h3{font-family:var(--fh);font-size:19px;font-weight:700;color:var(--text);margin-bottom:5px}
+.empty p{font-size:13px}
+
+/* TOAST */
+.toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);left:50%;transform:translateX(-50%) translateY(16px);background:#1a2033;color:#fff;border-radius:24px;padding:10px 20px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;pointer-events:none;z-index:9999;white-space:nowrap;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--green)}.toast.err{background:var(--red)}
+
+/* OVERLAY */
+.overlay{position:fixed;inset:0;background:rgba(15,24,41,.82);z-index:100;align-items:center;justify-content:center;display:none}
+.overlay.show{display:flex}
+.ov-card{background:var(--surface);border-radius:var(--r);padding:24px 32px;text-align:center}
+.spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+
+/* CODE BLOCK */
+code{font-family:var(--fm);font-size:11px;background:var(--bg);padding:8px 10px;border-radius:6px;display:block;line-height:1.9;color:var(--text);margin-top:6px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ═══════════════════ HEADER ═══════════════════ -->
+<header class="hdr">
+  <div class="hdr-inner">
+    <div class="hdr-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+    </div>
+    <div class="hdr-titles">
+      <h1>Representantes de Casilla</h1>
+      <p id="hdr-muni">Sin configurar — ve a Config</p>
+    </div>
+    <button class="sync-btn" onclick="syncNow()" id="sync-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="sync-ico"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <span class="sbadge" id="sync-badge" style="display:none"></span>
+    </button>
+  </div>
+  <nav class="screen-nav">
+    <div class="nav-tab active" onclick="showScreen('dashboard')" data-sc="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      Inicio
+    </div>
+    <div class="nav-tab" onclick="showScreen('captura')" data-sc="captura">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Captura
+    </div>
+    <div class="nav-tab" onclick="showScreen('registros')" data-sc="registros">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Registros
+    </div>
+    <div class="nav-tab" onclick="showScreen('config')" data-sc="config">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Config
+    </div>
+  </nav>
+</header>
+
+<!-- ═══════════════════ DASHBOARD ═══════════════════ -->
+<div class="screen active" id="screen-dashboard">
+  <div class="dash-hero">
+    <div class="dash-muni" id="dash-muni">Cargando...</div>
+    <div class="dash-total" id="dash-total">0</div>
+    <div class="dash-total-lbl">representantes capturados</div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val g" id="st-sync">0</div><div class="stat-lbl">Sincronizados</div></div>
+    <div class="stat-card"><div class="stat-val a" id="st-pend">0</div><div class="stat-lbl">Pendientes</div></div>
+    <div class="stat-card"><div class="stat-val r" id="st-err">0</div><div class="stat-lbl">Errores</div></div>
+  </div>
+  <div class="sync-area">
+    <button class="big-sync" id="big-sync" onclick="syncNow()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <span id="big-sync-lbl">Sincronizar con Google Sheets</span>
+    </button>
+  </div>
+  <div style="padding:8px 16px">
+    <button class="btn btn-secondary" onclick="showScreen('captura')" style="border-color:var(--navy);color:var(--navy)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Nueva captura
+    </button>
+  </div>
+  <div class="sec-lbl">Cobertura por sección</div>
+  <div class="cov-list" id="cov-list"><div style="padding:28px;text-align:center;font-size:13px;color:var(--muted)">Sin datos aún</div></div>
+  <div style="height:20px"></div>
+</div>
+
+<!-- ═══════════════════ CAPTURA ═══════════════════ -->
+<div class="screen" id="screen-captura">
+  <div class="form-hdr">
+    <h2>Nueva Captura</h2>
+    <p id="step-lbl">Paso 1 de 4 — Sección electoral</p>
+    <div class="step-dots" id="sdots">
+      <div class="sdot active"></div><div class="sdot"></div><div class="sdot"></div><div class="sdot"></div>
+    </div>
+  </div>
+
+  <!-- PASO 1: SECCIÓN -->
+  <div class="step active" id="step-1">
+    <div class="fld">
+      <label>Sección Electoral</label>
+      <div class="srch-wrap">
+        <div class="srch-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+        <input type="search" id="sec-search" placeholder="Buscar por número de sección..." oninput="searchSec(this.value)" onfocus="openSearch()" autocomplete="off" inputmode="numeric">
+      </div>
+      <div class="srch-res" id="sec-res"></div>
+      <div class="hint">Escribe el número de sección o busca en la lista</div>
+    </div>
+    <div id="sec-sel-info" style="display:none" class="cc">
+      <div class="cc-hdr">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <h3 id="sec-sel-title">—</h3>
+      </div>
+      <div class="cc-row"><div class="cc-lbl">Casillas</div><div class="cc-val" id="sec-cas-count">—</div></div>
+    </div>
+    <div style="margin-top:14px">
+      <button class="btn btn-primary" onclick="goStep(2)" id="btn-s1" disabled>
+        Siguiente — Elegir casilla
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- PASO 2: CASILLA -->
+  <div class="step" id="step-2">
+    <div class="ctx-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Sección <span class="ctx-strong" id="s2-sec">—</span>
+      <span class="change" onclick="goStep(1)">Cambiar</span>
+    </div>
+    <div class="fld">
+      <label>Selecciona la casilla</label>
+      <div class="cas-grid" id="cas-grid"></div>
+      <div class="hint">Toca la casilla donde actuará el representante</div>
+    </div>
+    <div id="cas-sel-info" style="display:none" class="cc">
+      <div class="cc-hdr">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+        <h3 id="cas-sel-title">—</h3>
+      </div>
+      <div class="cc-row"><div class="cc-lbl">Tipo</div><div class="cc-val" id="cas-tipo-v">—</div></div>
+      <div class="cc-row"><div class="cc-lbl">Ocupación</div><div class="cc-val" id="cas-reps-v">—</div></div>
+    </div>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-secondary" onclick="goStep(1)">Atrás</button>
+      <button class="btn btn-primary" onclick="goStep(3)" id="btn-s2" disabled>Siguiente</button>
+    </div>
+  </div>
+
+  <!-- PASO 3: DATOS DEL REPRESENTANTE -->
+  <div class="step" id="step-3">
+    <div class="ctx-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      Sec <span class="ctx-strong" id="s3-sec">—</span> &nbsp;|&nbsp; Casilla <span class="ctx-strong" id="s3-cas">—</span>
+      <span style="margin-left:auto;opacity:.6;font-size:11px" id="s3-tipo">—</span>
+    </div>
+
+    <div class="fld">
+      <label>Rol en la casilla</label>
+      <div class="rol-grid">
+        <div class="rol-card" onclick="selRol('REPRESENTANTE PROPIETARIO',this)"><h4>Propietario</h4><p>Representante titular</p></div>
+        <div class="rol-card" onclick="selRol('REPRESENTANTE SUPLENTE',this)"><h4>Suplente</h4><p>Representante alterno</p></div>
+        <div class="rol-card" onclick="selRol('REPRESENTANTE GENERAL',this)"><h4>General</h4><p>Representante de zona</p></div>
+        <div class="rol-card" onclick="selRol('OBSERVADOR',this)"><h4>Observador</h4><p>Solo observa</p></div>
+      </div>
+      <div class="errmsg" id="er-rol">Selecciona un rol</div>
+    </div>
+
+    <div class="fld">
+      <label>Partido / Coalición</label>
+      <div class="par-grid" id="par-grid"></div>
+      <div class="errmsg" id="er-par">Selecciona un partido</div>
+    </div>
+
+    <div class="fld">
+      <label>Nombre(s)</label>
+      <input type="text" id="f-nom" placeholder="Como aparece en su INE" oninput="valNom(this)" autocapitalize="characters" autocomplete="off">
+      <div class="errmsg" id="er-nom">Nombre requerido (mín. 2 caracteres)</div>
+    </div>
+    <div class="fld">
+      <label>Apellido Paterno</label>
+      <input type="text" id="f-pat" placeholder="Apellido paterno" oninput="valAp(this,'er-pat')" autocapitalize="characters">
+      <div class="errmsg" id="er-pat">Apellido paterno requerido</div>
+    </div>
+    <div class="fld">
+      <label>Apellido Materno <span style="font-weight:400;color:var(--light)">(opcional)</span></label>
+      <input type="text" id="f-mat" placeholder="Apellido materno" autocapitalize="characters">
+    </div>
+    <div class="fld">
+      <label>Clave de Elector (INE) <span style="font-weight:400;color:var(--light)">18 caracteres</span></label>
+      <input type="text" id="f-ine" placeholder="Ej. ABCD123456EFGH78" oninput="valINE(this)" maxlength="18" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" style="font-family:var(--fm);letter-spacing:.5px;text-transform:uppercase">
+      <div class="cnt" id="ine-cnt">0 / 18</div>
+      <div class="errmsg" id="er-ine">Debe tener exactamente 18 caracteres alfanuméricos</div>
+    </div>
+    <div class="fld">
+      <label>Teléfono celular <span style="font-weight:400;color:var(--light)">10 dígitos</span></label>
+      <input type="tel" id="f-tel" placeholder="5512345678" oninput="valTel(this)" maxlength="10" inputmode="numeric" autocomplete="tel">
+      <div class="hint" id="tel-fmt" style="font-family:var(--fm);color:var(--navy);font-weight:500"></div>
+      <div class="errmsg" id="er-tel">Teléfono debe tener exactamente 10 dígitos</div>
+    </div>
+    <div class="fld">
+      <label>Notas <span style="font-weight:400;color:var(--light)">(opcional)</span></label>
+      <textarea id="f-not" placeholder="Disponibilidad, referencia, observaciones..."></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goStep(2)">Atrás</button>
+      <button class="btn btn-primary" onclick="step3to4()">Revisar datos</button>
+    </div>
+  </div>
+
+  <!-- PASO 4: CONFIRMACIÓN -->
+  <div class="step" id="step-4">
+    <div class="ok-notice">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      Verifica la información antes de guardar
+    </div>
+    <div class="cc">
+      <div class="cc-hdr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg><h3>Casilla</h3></div>
+      <div class="cc-row"><div class="cc-lbl">Sección</div><div class="cc-val" id="cv-sec">—</div></div>
+      <div class="cc-row"><div class="cc-lbl">Casilla</div><div class="cc-val" id="cv-cas">—</div></div>
+      <div class="cc-row"><div class="cc-lbl">Tipo</div><div class="cc-val" id="cv-tip">—</div></div>
+    </div>
+    <div class="cc">
+      <div class="cc-hdr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><h3>Representante</h3></div>
+      <div class="cc-row"><div class="cc-lbl">Nombre</div><div class="cc-val" id="cv-nom">—</div></div>
+      <div class="cc-row"><div class="cc-lbl">INE</div><div class="cc-val mono" id="cv-ine">—</div></div>
+      <div class="cc-row"><div class="cc-lbl">Teléfono</div><div class="cc-val mono" id="cv-tel">—</div></div>
+      <div class="cc-row"><div class="cc-lbl">Rol</div><div class="cc-val" id="cv-rol">—</div></div>
+      <div class="cc-row"><div class="cc-lbl">Partido</div><div class="cc-val" id="cv-par">—</div></div>
+      <div class="cc-row" id="cv-not-row"><div class="cc-lbl">Notas</div><div class="cc-val" id="cv-not">—</div></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goStep(3)">Editar</button>
+      <button class="btn btn-success" onclick="guardar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Guardar registro
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ REGISTROS ═══════════════════ -->
+<div class="screen" id="screen-registros">
+  <div class="filter-bar">
+    <div class="fchip active" onclick="filt('all',this)">Todos</div>
+    <div class="fchip" onclick="filt('pending',this)">Pendientes</div>
+    <div class="fchip" onclick="filt('synced',this)">Sincronizados</div>
+    <div class="fchip" onclick="filt('error',this)">Con error</div>
+  </div>
+  <div id="reg-list" style="padding-bottom:20px"></div>
+</div>
+
+<!-- ═══════════════════ CONFIG ═══════════════════ -->
+<div class="screen" id="screen-config">
+  <div class="cfg-s">
+    <div class="cfg-card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>Municipio</h3>
+      <div class="fld"><label>Nombre del municipio</label>
+        <input type="text" id="cfg-muni" placeholder="Ej. San Andrés Cholula" oninput="saveCfg()">
+      </div>
+      <div class="fld"><label>Capturista (nombre o código)</label>
+        <input type="text" id="cfg-cap" placeholder="Nombre del capturista en campo" oninput="saveCfg()">
+      </div>
+    </div>
+
+    <div class="cfg-card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronización</h3>
+      <div class="fld">
+        <label>URL del Apps Script Web App</label>
+        <input type="url" id="cfg-url" placeholder="https://script.google.com/macros/s/…/exec" oninput="saveCfg()">
+        <div class="hint">Obtén esta URL al desplegar tu Apps Script como "Web App"</div>
+      </div>
+      <button class="btn btn-secondary" onclick="testConn()" style="margin-top:6px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Probar conexión
+      </button>
+    </div>
+
+    <div class="cfg-card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Catálogo de Casillas</h3>
+      <div id="cat-status" style="font-size:13px;color:var(--muted);margin-bottom:10px">Sin catálogo cargado</div>
+      <div class="imp-zone" onclick="document.getElementById('csv-in').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <strong>Importar CSV de catálogo</strong>
+        <p>Columnas: SECCION, ID_CASILLA, TIPO_CASILLA</p>
+      </div>
+      <input type="file" id="csv-in" accept=".csv" style="display:none" onchange="importCSV(this)">
+      <div style="margin-top:10px;font-size:12px;color:var(--muted)">
+        <strong>Formato del CSV:</strong>
+        <code>SECCION,ID_CASILLA,TIPO_CASILLA<br>1234,1,BASICA<br>1234,2,BASICA<br>1234,3,CONTIGUA<br>1235,1,BASICA</code>
+      </div>
+    </div>
+
+    <div class="cfg-card">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Partidos</h3>
+      <div class="fld">
+        <label>Lista separada por comas</label>
+        <textarea id="cfg-par" placeholder="PAN,PRI,PRD,MORENA,PT,PVEM,MC" style="min-height:60px" oninput="saveCfg()"></textarea>
+      </div>
+      <div id="par-preview" style="font-size:12px;color:var(--muted)"></div>
+    </div>
+
+    <div class="cfg-card" style="border-left:3px solid var(--red)">
+      <h3 style="color:var(--red)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Datos locales</h3>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="exportJSON()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar JSON
+        </button>
+        <button class="btn btn-danger" onclick="clearAll()">Borrar todo</button>
+      </div>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<div class="toast" id="toast"></div>
+<div class="overlay" id="overlay"><div class="ov-card"><div class="spinner"></div><p id="ov-msg" style="font-size:13px;color:var(--muted)">Procesando...</p></div></div>
+
+<script>
+// ════════════════════════════════════════════
+// ESTADO GLOBAL
+// ════════════════════════════════════════════
+const S = {
+  step: 1,
+  seccion: null,    // {seccion}
+  casilla: null,    // {seccion, id_casilla, tipo_casilla}
+  rol: null,
+  partido: null,
+  catalogo: [],
+  registros: [],
+  filtro: 'all',
+  cfg: {
+    municipio: '', capturista: '',
+    scriptUrl: '',
+    partidos: 'PAN,PRI,PRD,MORENA,PT,PVEM,MC,PES,RSP,INDEPENDIENTE'
+  }
+};
+
+// ════════════════════════════════════════════
+// INDEXEDDB
+// ════════════════════════════════════════════
+let DB;
+function openDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('rep_casillas_v2', 1);
+    r.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('registros')) {
+        const st = d.createObjectStore('registros', {keyPath:'id', autoIncrement:true});
+        st.createIndex('synced','synced',{unique:false});
+      }
+      if (!d.objectStoreNames.contains('config')) d.createObjectStore('config',{keyPath:'k'});
+      if (!d.objectStoreNames.contains('catalogo')) {
+        const ct = d.createObjectStore('catalogo',{keyPath:'id'});
+        ct.createIndex('seccion','seccion',{unique:false});
+      }
+    };
+    r.onsuccess = e => { DB = e.target.result; res(); };
+    r.onerror = () => rej(r.error);
+  });
+}
+function tx(store, mode='readonly') { return DB.transaction(store, mode).objectStore(store); }
+function dbAll(store) { return new Promise((res,rej)=>{ const r=tx(store).getAll(); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+function dbPut(store, obj) { return new Promise((res,rej)=>{ const r=tx(store,'readwrite').put(obj); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+function dbClear(store) { return new Promise((res,rej)=>{ const r=tx(store,'readwrite').clear(); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); }); }
+
+// ════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════
+async function loadCfg() {
+  const items = await dbAll('config');
+  items.forEach(i => S.cfg[i.k] = i.v);
+  document.getElementById('cfg-muni').value = S.cfg.municipio||'';
+  document.getElementById('cfg-cap').value  = S.cfg.capturista||'';
+  document.getElementById('cfg-url').value  = S.cfg.scriptUrl||'';
+  document.getElementById('cfg-par').value  = S.cfg.partidos||'PAN,PRI,PRD,MORENA,PT,PVEM,MC';
+  refreshHdr();
+}
+async function saveCfg() {
+  S.cfg.municipio  = document.getElementById('cfg-muni').value.trim();
+  S.cfg.capturista = document.getElementById('cfg-cap').value.trim();
+  S.cfg.scriptUrl  = document.getElementById('cfg-url').value.trim();
+  S.cfg.partidos   = document.getElementById('cfg-par').value.trim();
+  for (const [k,v] of Object.entries(S.cfg)) await dbPut('config',{k,v});
+  refreshHdr();
+  renderParPreview();
+}
+function refreshHdr() {
+  const m = S.cfg.municipio||'Sin configurar';
+  document.getElementById('hdr-muni').textContent = m;
+  document.getElementById('dash-muni').textContent = m;
+}
+function renderParPreview() {
+  const pars = parsePars();
+  document.getElementById('par-preview').textContent = pars.length ? `${pars.length} partidos configurados` : '';
+}
+function parsePars() { return (S.cfg.partidos||'').split(',').map(p=>p.trim()).filter(Boolean); }
+
+// ════════════════════════════════════════════
+// CATÁLOGO
+// ════════════════════════════════════════════
+async function loadCatalogo() {
+  S.catalogo = await dbAll('catalogo');
+  updateCatStatus();
+}
+function updateCatStatus() {
+  const secs = [...new Set(S.catalogo.map(r=>r.seccion))].length;
+  const cas  = S.catalogo.length;
+  const el   = document.getElementById('cat-status');
+  el.innerHTML = cas===0
+    ? '<span style="color:var(--red)">⚠ Sin catálogo — importa un CSV</span>'
+    : `<span style="color:var(--green)">✓ ${secs} secciones · ${cas} casillas cargadas</span>`;
+}
+async function importCSV(inp) {
+  const f = inp.files[0]; if (!f) return;
+  const txt = await f.text();
+  const lines = txt.trim().split('\n');
+  const skip  = isNaN(lines[0].split(',')[0].trim()) ? 1 : 0;
+  await dbClear('catalogo');
+  let n=0;
+  for (let i=skip; i<lines.length; i++) {
+    const p = lines[i].split(',').map(s=>s.trim().replace(/^"|"$/g,''));
+    if (p.length<2) continue;
+    const sec=String(p[0]).trim(), cas=String(p[1]).trim(), tipo=(p[2]||'BASICA').trim().toUpperCase();
+    if (!sec||!cas) continue;
+    await dbPut('catalogo',{id:`${sec}-${cas}`,seccion:sec,id_casilla:cas,tipo_casilla:tipo});
+    n++;
+  }
+  await loadCatalogo();
+  inp.value='';
+  toast(`✓ ${n} casillas importadas`,'ok');
+}
+
+// ════════════════════════════════════════════
+// REGISTROS
+// ════════════════════════════════════════════
+async function loadReg() {
+  S.registros = await dbAll('registros');
+  updateDash();
+  renderReg();
+}
+async function guardar() {
+  const nom = document.getElementById('f-nom').value.trim().toUpperCase();
+  const pat = document.getElementById('f-pat').value.trim().toUpperCase();
+  const mat = document.getElementById('f-mat').value.trim().toUpperCase();
+  const ine = document.getElementById('f-ine').value.trim().toUpperCase();
+  const tel = document.getElementById('f-tel').value.replace(/\D/g,'');
+  const not = document.getElementById('f-not').value.trim();
+  const telF= `${tel.slice(0,2)}-${tel.slice(2,6)}-${tel.slice(6)}`;
+
+  // Unicidad casilla + rol + partido
+  if (S.registros.some(r=>
+    String(r.seccion)===String(S.seccion.seccion) &&
+    r.id_casilla===S.casilla.id_casilla &&
+    r.rol===S.rol && r.partido===S.partido
+  )) { toast('⚠ Ya existe ese rol/partido en esta casilla','err'); return; }
+
+  // Unicidad INE
+  if (S.registros.some(r=>r.ine===ine)) { toast('⚠ Clave INE ya registrada','err'); return; }
+
+  const reg = {
+    seccion: S.seccion.seccion,
+    id_casilla: S.casilla.id_casilla,
+    tipo_casilla: S.casilla.tipo_casilla,
+    nombre: `${nom} ${pat} ${mat}`.trim(),
+    nombre_p: nom, ap_pat: pat, ap_mat: mat,
+    ine, telefono: telF,
+    rol: S.rol, partido: S.partido, notas: not,
+    capturado_por: S.cfg.capturista||'Anónimo',
+    timestamp: new Date().toISOString(),
+    synced: false, sync_error: null
+  };
+  await dbPut('registros', reg);
+  await loadReg();
+  toast('✓ Registro guardado localmente','ok');
+  resetForm();
+  showScreen('registros');
+  if (S.cfg.scriptUrl) syncNow(true);
+}
+
+// ════════════════════════════════════════════
+// SINCRONIZACIÓN
+// ════════════════════════════════════════════
+let syncing=false;
+async function syncNow(silent=false) {
+  if (syncing) return;
+  if (!S.cfg.scriptUrl) { if(!silent) toast('Configura la URL de Apps Script primero','err'); return; }
+  if (!navigator.onLine) { if(!silent) toast('Sin conexión a internet','err'); return; }
+  const pend = S.registros.filter(r=>!r.synced&&!r.sync_error);
+  if (!pend.length) { if(!silent) toast('Sin registros pendientes','ok'); return; }
+  syncing=true;
+  document.getElementById('sync-btn').classList.add('spinning');
+  if(!silent) showOv(`Sincronizando ${pend.length} registro(s)...`);
+  let ok=0,err=0;
+  for (const reg of pend) {
+    try {
+      await fetch(S.cfg.scriptUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(reg)});
+      reg.synced=true; reg.sync_error=null;
+      await dbPut('registros',reg); ok++;
+    } catch(e) { reg.sync_error=e.message||'Error de red'; await dbPut('registros',reg); err++; }
+  }
+  await loadReg();
+  syncing=false;
+  document.getElementById('sync-btn').classList.remove('spinning');
+  hideOv();
+  if(!silent) toast(err===0?`✓ ${ok} registros sincronizados`:`${ok} ok · ${err} con error`, err>0?'err':'ok');
+}
+async function testConn() {
+  const url=document.getElementById('cfg-url').value.trim();
+  if(!url){toast('Ingresa la URL primero','err');return;}
+  if(!navigator.onLine){toast('Sin conexión','err');return;}
+  toast('Probando...','');
+  try{ await fetch(url+'?test=1',{mode:'no-cors'}); toast('✓ URL alcanzable','ok'); }
+  catch(e){ toast('⚠ Error al conectar','err'); }
+}
+
+// ════════════════════════════════════════════
+// FORM STEPS
+// ════════════════════════════════════════════
+const STEP_LABELS=['','Paso 1 de 4 — Sección electoral','Paso 2 de 4 — Selección de casilla','Paso 3 de 4 — Datos del representante','Paso 4 de 4 — Confirmación'];
+function goStep(n) {
+  if(n===2&&!S.seccion){toast('Selecciona una sección','err');return;}
+  if(n===3&&!S.casilla){toast('Selecciona una casilla','err');return;}
+  document.getElementById(`step-${S.step}`).classList.remove('active');
+  S.step=n;
+  document.getElementById(`step-${n}`).classList.add('active');
+  document.getElementById('step-lbl').textContent=STEP_LABELS[n];
+  document.querySelectorAll('.sdot').forEach((d,i)=>{
+    d.classList.remove('active','done');
+    if(i===n-1) d.classList.add('active');
+    else if(i<n-1) d.classList.add('done');
+  });
+  if(n===2) renderCasGrid();
+  if(n===3){
+    document.getElementById('s3-sec').textContent=S.seccion.seccion;
+    document.getElementById('s3-cas').textContent=S.casilla.id_casilla;
+    document.getElementById('s3-tipo').textContent=S.casilla.tipo_casilla;
+    renderPar();
+  }
+  if(n===4) renderConfirm();
+  document.getElementById('screen-captura').scrollTo(0,0);
+}
+
+function step3to4() {
+  let ok=true;
+  if(!S.rol){document.getElementById('er-rol').classList.add('on');ok=false;}
+  if(!S.partido){document.getElementById('er-par').classList.add('on');ok=false;}
+  const nom=document.getElementById('f-nom');
+  const pat=document.getElementById('f-pat');
+  const ine=document.getElementById('f-ine');
+  const tel=document.getElementById('f-tel');
+  if(nom.value.trim().length<2){nom.classList.add('bad');document.getElementById('er-nom').classList.add('on');ok=false;}
+  if(pat.value.trim().length<2){pat.classList.add('bad');document.getElementById('er-pat').classList.add('on');ok=false;}
+  if(ine.value.trim().length!==18){ine.classList.add('bad');document.getElementById('er-ine').classList.add('on');ok=false;}
+  if(tel.value.replace(/\D/g,'').length!==10){tel.classList.add('bad');document.getElementById('er-tel').classList.add('on');ok=false;}
+  if(ok) goStep(4); else toast('Corrige los campos marcados','err');
+}
+
+function renderConfirm() {
+  const tel=document.getElementById('f-tel').value.replace(/\D/g,'');
+  document.getElementById('cv-sec').textContent=S.seccion.seccion;
+  document.getElementById('cv-cas').textContent=S.casilla.id_casilla;
+  document.getElementById('cv-tip').textContent=S.casilla.tipo_casilla;
+  document.getElementById('cv-nom').textContent=[document.getElementById('f-nom').value.trim(),document.getElementById('f-pat').value.trim(),document.getElementById('f-mat').value.trim()].filter(Boolean).join(' ').toUpperCase();
+  document.getElementById('cv-ine').textContent=document.getElementById('f-ine').value.trim().toUpperCase();
+  document.getElementById('cv-tel').textContent=`${tel.slice(0,2)}-${tel.slice(2,6)}-${tel.slice(6)}`;
+  document.getElementById('cv-rol').textContent=S.rol;
+  document.getElementById('cv-par').textContent=S.partido;
+  const n=document.getElementById('f-not').value.trim();
+  document.getElementById('cv-not').textContent=n||'—';
+  document.getElementById('cv-not-row').style.display=n?'flex':'none';
+}
+
+function resetForm() {
+  S.step=1; S.seccion=null; S.casilla=null; S.rol=null; S.partido=null;
+  document.getElementById('sec-search').value='';
+  document.getElementById('sec-res').classList.remove('open');
+  document.getElementById('sec-sel-info').style.display='none';
+  document.getElementById('btn-s1').disabled=true;
+  ['f-nom','f-pat','f-mat','f-ine','f-tel','f-not'].forEach(id=>{
+    const el=document.getElementById(id); if(el){el.value='';el.classList.remove('ok','bad');}
+  });
+  document.querySelectorAll('.errmsg').forEach(e=>e.classList.remove('on'));
+  document.querySelectorAll('.rol-card').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('ine-cnt').textContent='0 / 18';
+  document.getElementById('tel-fmt').textContent='';
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('step-1').classList.add('active');
+  document.querySelectorAll('.sdot').forEach((d,i)=>{d.classList.remove('active','done');if(i===0)d.classList.add('active');});
+  document.getElementById('step-lbl').textContent=STEP_LABELS[1];
+}
+
+// ════════════════════════════════════════════
+// SECCIÓN
+// ════════════════════════════════════════════
+function searchSec(q) {
+  q=q.trim();
+  const r=document.getElementById('sec-res');
+  if(!q){r.classList.remove('open');return;}
+  const secs=[...new Map(S.catalogo.map(c=>[c.seccion,c])).values()];
+  const found=secs.filter(s=>String(s.seccion).includes(q)).slice(0,12);
+  if(!found.length){r.innerHTML=`<div class="srch-item" style="color:var(--muted)">Sin resultados</div>`;r.classList.add('open');return;}
+  r.innerHTML=found.map(s=>{
+    const n=S.catalogo.filter(c=>c.seccion===s.seccion).length;
+    return `<div class="srch-item" onclick="selSec('${s.seccion}')"><span class="sec-badge">${s.seccion}</span><span class="sub">${n} casilla${n>1?'s':''}</span></div>`;
+  }).join('');
+  r.classList.add('open');
+}
+function openSearch() {
+  if(!S.catalogo.length){toast('Importa primero el catálogo','err');return;}
+  searchSec(document.getElementById('sec-search').value);
+}
+function selSec(sec) {
+  S.seccion={seccion:sec};
+  document.getElementById('sec-search').value=sec;
+  document.getElementById('sec-res').classList.remove('open');
+  const n=S.catalogo.filter(c=>c.seccion===sec).length;
+  document.getElementById('sec-sel-info').style.display='block';
+  document.getElementById('sec-sel-title').textContent=`Sección ${sec}`;
+  document.getElementById('sec-cas-count').textContent=`${n} casilla${n>1?'s':''}`;
+  document.getElementById('btn-s1').disabled=false;
+}
+
+// ════════════════════════════════════════════
+// CASILLA GRID
+// ════════════════════════════════════════════
+function renderCasGrid() {
+  if(!S.seccion) return;
+  const sec=S.seccion.seccion;
+  const cas=S.catalogo.filter(c=>c.seccion===sec);
+  const g=document.getElementById('cas-grid');
+  document.getElementById('s2-sec').textContent=sec;
+  document.getElementById('btn-s2').disabled=true;
+  document.getElementById('cas-sel-info').style.display='none';
+  S.casilla=null;
+  g.innerHTML=cas.map(c=>{
+    const reps=S.registros.filter(r=>r.seccion===sec&&r.id_casilla===c.id_casilla);
+    return `<div class="cas-chip${reps.length?' has':''}" onclick="selCas('${c.id_casilla}')" data-cas="${c.id_casilla}">
+      <div class="cid">${c.id_casilla}</div>
+      <div class="ctp">${c.tipo_casilla}</div>
+      ${reps.length?`<div class="crep">${reps.length}rep</div>`:''}
+    </div>`;
+  }).join('');
+}
+function selCas(id) {
+  const sec=S.seccion.seccion;
+  const item=S.catalogo.find(c=>c.seccion===sec&&c.id_casilla===id);
+  if(!item) return;
+  S.casilla=item;
+  document.querySelectorAll('.cas-chip').forEach(c=>c.classList.remove('sel'));
+  document.querySelector(`[data-cas="${id}"]`)?.classList.add('sel');
+  const reps=S.registros.filter(r=>r.seccion===sec&&r.id_casilla===id);
+  document.getElementById('cas-sel-info').style.display='block';
+  document.getElementById('cas-sel-title').textContent=`Casilla ${id} — Sec. ${sec}`;
+  document.getElementById('cas-tipo-v').textContent=item.tipo_casilla;
+  document.getElementById('cas-reps-v').textContent=reps.length?`${reps.length} representante(s) registrados`:'Sin representantes aún';
+  document.getElementById('btn-s2').disabled=false;
+}
+
+// ════════════════════════════════════════════
+// PARTIDO / ROL
+// ════════════════════════════════════════════
+function renderPar() {
+  const pars=parsePars();
+  const g=document.getElementById('par-grid');
+  g.innerHTML=pars.map(p=>`<div class="par-chip${S.partido===p?' sel':''}" onclick="selPar('${p}',this)">${p}</div>`).join('');
+}
+function selPar(p,el){S.partido=p;document.querySelectorAll('.par-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');document.getElementById('er-par').classList.remove('on');}
+function selRol(r,el){S.rol=r;document.querySelectorAll('.rol-card').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');document.getElementById('er-rol').classList.remove('on');}
+
+// ════════════════════════════════════════════
+// VALIDACIONES
+// ════════════════════════════════════════════
+function valNom(i){i.value=i.value.toUpperCase();const ok=i.value.trim().length>=2;i.classList.toggle('ok',ok);i.classList.toggle('bad',!ok&&i.value.length>0);document.getElementById('er-nom').classList.toggle('on',!ok&&i.value.length>0);}
+function valAp(i,eid){i.value=i.value.toUpperCase();const ok=i.value.trim().length>=2;i.classList.toggle('ok',ok);i.classList.toggle('bad',!ok&&i.value.length>0);document.getElementById(eid).classList.toggle('on',!ok&&i.value.length>0);}
+function valINE(i){const v=i.value.toUpperCase().replace(/[^A-Z0-9]/g,'');i.value=v;const ok=v.length===18;document.getElementById('ine-cnt').textContent=`${v.length} / 18`;i.classList.toggle('ok',ok);i.classList.toggle('bad',!ok&&v.length>0);document.getElementById('er-ine').classList.toggle('on',!ok&&v.length>0);}
+function valTel(i){const d=i.value.replace(/\D/g,'');i.value=d;const ok=d.length===10;i.classList.toggle('ok',ok);i.classList.toggle('bad',!ok&&d.length>0);document.getElementById('er-tel').classList.toggle('on',!ok&&d.length>0);document.getElementById('tel-fmt').textContent=ok?`${d.slice(0,2)}-${d.slice(2,6)}-${d.slice(6)}`:(d.length?`${d.length}/10 dígitos`:'');}
+
+// ════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════
+function updateDash() {
+  const r=S.registros, tot=r.length;
+  const sync=r.filter(x=>x.synced).length;
+  const pend=r.filter(x=>!x.synced&&!x.sync_error).length;
+  const errs=r.filter(x=>x.sync_error).length;
+  document.getElementById('dash-total').textContent=tot;
+  document.getElementById('st-sync').textContent=sync;
+  document.getElementById('st-pend').textContent=pend;
+  document.getElementById('st-err').textContent=errs;
+  const badge=document.getElementById('sync-badge');
+  if(pend>0){badge.textContent=pend;badge.style.display='inline-flex';document.getElementById('big-sync').classList.add('pending');document.getElementById('big-sync-lbl').textContent=`Sincronizar ${pend} pendiente${pend>1?'s':''}`;}
+  else{badge.style.display='none';document.getElementById('big-sync').classList.remove('pending');document.getElementById('big-sync-lbl').textContent='Sincronizar con Google Sheets';}
+  // Coverage
+  const secMap={};
+  S.catalogo.forEach(c=>{
+    if(!secMap[c.seccion]) secMap[c.seccion]={tot:0,cov:0};
+    secMap[c.seccion].tot++;
+    if(S.registros.some(x=>x.seccion===c.seccion&&x.id_casilla===c.id_casilla)) secMap[c.seccion].cov++;
+  });
+  const keys=Object.keys(secMap).sort((a,b)=>Number(a)-Number(b));
+  const list=document.getElementById('cov-list');
+  if(!keys.length){list.innerHTML='<div style="padding:28px;text-align:center;font-size:13px;color:var(--muted)">Importa el catálogo para ver cobertura</div>';return;}
+  list.innerHTML=keys.map(sec=>{
+    const {tot,cov}=secMap[sec], pct=tot?Math.round(cov/tot*100):0;
+    return `<div class="cov-item"><div class="cov-sec">${sec}</div><div class="cov-bar-w"><div class="cov-bar-lbl"><span>${cov}/${tot} casillas</span><span>${pct}%</span></div><div class="cov-bar"><div class="cov-fill" style="width:${pct}%"></div></div></div></div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════
+// REGISTROS LIST
+// ════════════════════════════════════════════
+function renderReg() {
+  let regs=[...S.registros].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+  if(S.filtro==='pending') regs=regs.filter(r=>!r.synced&&!r.sync_error);
+  if(S.filtro==='synced')  regs=regs.filter(r=>r.synced);
+  if(S.filtro==='error')   regs=regs.filter(r=>r.sync_error);
+  const list=document.getElementById('reg-list');
+  if(!regs.length){list.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><h3>Sin registros</h3><p>Captura tu primer representante</p></div>`;return;}
+  list.innerHTML=regs.map(r=>{
+    const ini=((r.nombre_p||r.nombre||'?')[0]+(r.ap_pat||'')[0]).toUpperCase();
+    const st=r.sync_error?`<span class="badge be">Error</span>`:r.synced?`<span class="badge bs">Sync</span>`:`<span class="badge bp">Pendiente</span>`;
+    const d=new Date(r.timestamp).toLocaleDateString('es-MX',{day:'2-digit',month:'short'});
+    return `<div class="reg-item"><div class="reg-av">${ini}</div><div class="reg-info"><div class="reg-name">${r.nombre}</div><div class="reg-sub">${r.rol} · ${r.partido}</div><div class="reg-ine">${r.ine} · ${r.telefono}</div></div><div class="reg-right">${st}<span class="cas-lbl">S${r.seccion}·C${r.id_casilla}</span><span class="dt-lbl">${d}</span></div></div>`;
+  }).join('');
+}
+function filt(mode,el){S.filtro=mode;document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderReg();}
+
+// ════════════════════════════════════════════
+// NAVEGACIÓN
+// ════════════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.sc===name));
+  document.getElementById(`screen-${name}`).classList.add('active');
+  if(name==='dashboard') updateDash();
+  if(name==='registros') renderReg();
+  if(name==='config') renderParPreview();
+}
+
+// ════════════════════════════════════════════
+// UTILIDADES
+// ════════════════════════════════════════════
+function toast(msg, type='', dur=2800) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+function showOv(msg){document.getElementById('ov-msg').textContent=msg;document.getElementById('overlay').classList.add('show');}
+function hideOv(){document.getElementById('overlay').classList.remove('show');}
+function exportJSON(){
+  const b=new Blob([JSON.stringify(S.registros,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);
+  a.download=`representantes_${S.cfg.municipio||'municipio'}_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();URL.revokeObjectURL(a.href);
+}
+async function clearAll(){
+  if(!confirm('¿Borrar TODOS los registros locales? No se puede deshacer.')) return;
+  await dbClear('registros'); await loadReg(); toast('Registros eliminados','ok');
+}
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+async function init() {
+  await openDB();
+  await loadCfg();
+  await loadCatalogo();
+  await loadReg();
+  // Cerrar search al hacer click fuera
+  document.addEventListener('click', e=>{
+    if(!e.target.closest('#sec-search')&&!e.target.closest('#sec-res'))
+      document.getElementById('sec-res').classList.remove('open');
+  });
+  // Online/offline
+  window.addEventListener('online', ()=>toast('Conexión restaurada','ok'));
+  window.addEventListener('offline',()=>toast('Sin conexión — modo offline',''));
+}
+
+init();
+</script>
+</body>
+</html>
