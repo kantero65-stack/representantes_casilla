@@ -144,11 +144,36 @@ body{font-family:var(--fb);color:var(--text);font-size:15px;line-height:1.5}
 .cas-chip{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--rs);padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s}
 .cas-chip:hover{border-color:var(--navy)}
 .cas-chip.sel{border-color:var(--navy);background:var(--navy);color:#fff}
-.cas-chip.has{border-color:var(--amber);border-style:dashed}
+.cas-chip.has-local{border-color:var(--amber);border-style:dashed}
+/* Estado global desde Sheets */
+.cas-chip.g-partial{border-color:var(--amber);border-style:solid;border-width:2px}
+.cas-chip.g-full{background:#f1f5f9;border-color:#94a3b8;border-style:solid;border-width:2px;opacity:.75}
+.cas-chip.g-full .cid{color:#64748b}
+.cas-chip.g-full .ctp{color:#94a3b8}
 .cas-chip .cid{font-family:var(--fh);font-size:17px;font-weight:700}
 .cas-chip .ctp{font-size:9px;color:var(--muted);margin-top:1px}
 .cas-chip.sel .ctp{color:rgba(255,255,255,.65)}
 .cas-chip .crep{font-size:9px;color:var(--amber);margin-top:2px}
+.cas-chip .g-ico{font-size:10px;margin-top:2px}
+/* Rol bloqueado */
+.rol-card.bloqueado{opacity:.5;cursor:not-allowed;border-style:dashed}
+.rol-card.bloqueado:hover{border-color:var(--border)}
+.rol-bloq-lbl{font-size:10px;color:var(--red);font-weight:700;margin-top:3px}
+/* Banner estado */
+.estado-bar{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border);font-size:11px;color:var(--muted)}
+.estado-bar .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-ok{background:var(--green)}.dot-old{background:var(--amber)}.dot-no{background:var(--light)}
+.estado-bar button{margin-left:auto;background:var(--navy);color:#fff;border:none;border-radius:14px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;flex-shrink:0}
+.estado-bar button svg{width:11px;height:11px}
+.estado-bar button.spin svg{animation:spin .7s linear infinite}
+/* Leyenda */
+.leyenda{display:flex;gap:10px;flex-wrap:wrap;padding:8px 0 4px;font-size:10px;color:var(--muted)}
+.ley-item{display:flex;align-items:center;gap:4px}
+.ley-box{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.lb-libre{background:var(--surface);border:1.5px solid var(--border)}
+.lb-local{background:var(--surface);border:2px dashed var(--amber)}
+.lb-parcial{background:var(--surface);border:2px solid var(--amber)}
+.lb-llena{background:#f1f5f9;border:2px solid #94a3b8}
 
 /* ROL — solo 2 */
 .rol-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -411,8 +436,24 @@ body{font-family:var(--fb);color:var(--text);font-size:15px;line-height:1.5}
         Sección <span class="ctx-strong" id="c-s2-sec">—</span>
         <span class="change" onclick="casGoStep(1)">Cambiar</span>
       </div>
+      <!-- BANNER ESTADO GLOBAL -->
+      <div class="estado-bar" id="estado-bar">
+        <div class="dot dot-no" id="estado-dot"></div>
+        <span id="estado-txt">Sin estado de Sheets</span>
+        <button onclick="descargarEstado()" id="estado-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Actualizar estado
+        </button>
+      </div>
       <div class="fld">
         <label>Selecciona la casilla</label>
+        <!-- LEYENDA -->
+        <div class="leyenda">
+          <div class="ley-item"><div class="ley-box lb-libre"></div>Libre</div>
+          <div class="ley-item"><div class="ley-box lb-local"></div>Capturado local</div>
+          <div class="ley-item"><div class="ley-box lb-parcial"></div>Parcial (Sheets)</div>
+          <div class="ley-item"><div class="ley-box lb-llena"></div>Completa (Sheets)</div>
+        </div>
         <div class="cas-grid" id="c-cas-grid"></div>
       </div>
       <div id="c-cas-info" style="display:none" class="cc">
@@ -438,15 +479,17 @@ body{font-family:var(--fb);color:var(--text);font-size:15px;line-height:1.5}
       <div class="fld">
         <label>Rol</label>
         <div class="rol-grid">
-          <div class="rol-card" onclick="selRol('PROPIETARIO',this)">
+          <div class="rol-card" id="rol-prop" onclick="selRolSiDisponible('PROPIETARIO',this)">
             <div class="rol-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
             <h4>Propietario</h4>
             <p>Representante titular</p>
+            <div class="rol-bloq-lbl" id="bloq-prop" style="display:none">Ya asignado en Sheets</div>
           </div>
-          <div class="rol-card" onclick="selRol('SUPLENTE',this)">
+          <div class="rol-card" id="rol-sup" onclick="selRolSiDisponible('SUPLENTE',this)">
             <div class="rol-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
             <h4>Suplente</h4>
             <p>Representante alterno</p>
+            <div class="rol-bloq-lbl" id="bloq-sup" style="display:none">Ya asignado en Sheets</div>
           </div>
         </div>
         <div class="errmsg" id="er-rol">Selecciona un rol</div>
@@ -724,6 +767,8 @@ const S={
   gStep:1, gSecciones:[], gPartido:null,
   // común
   catalogo:[], registros:[], filtro:'all',
+  // estado global desde Sheets
+  estadoGlobal:[], estadoTs:null,
   cfg:{municipio:'',capturista:'',scriptUrl:'',partidos:'MORENA'}
 };
 
@@ -1019,7 +1064,90 @@ function selCSec(sec){
 }
 
 // ══════════════════════════════════════════
-// CASILLA GRID
+// ESTADO GLOBAL DESDE SHEETS
+// ══════════════════════════════════════════
+async function descargarEstado(){
+  if(!S.cfg.scriptUrl){toast('Configura la URL del Script primero','err');return;}
+  if(!navigator.onLine){toast('Sin conexión a internet','err');return;}
+  const btn=document.getElementById('estado-btn');
+  if(btn) btn.classList.add('spin');
+  try{
+    const resp=await fetch(S.cfg.scriptUrl+'?action=estado');
+    const data=await resp.json();
+    if(data.status==='OK'){
+      S.estadoGlobal=data.registros||[];
+      S.estadoTs=new Date();
+      actualizarBannerEstado();
+      // Si estamos en el grid de casillas, refrescar
+      if(S.cSeccion) renderCasGrid();
+      // Si tenemos casilla seleccionada, refrescar roles
+      if(S.cCasilla) actualizarRolesGlobal();
+      toast(`✓ Estado actualizado — ${S.estadoGlobal.length} registros en Sheets`,'ok');
+    }else{
+      toast('Error al obtener estado: '+data.message,'err');
+    }
+  }catch(e){
+    toast('Sin conexión o error en el Script','err');
+  }
+  if(btn) btn.classList.remove('spin');
+}
+
+function actualizarBannerEstado(){
+  const dot=document.getElementById('estado-dot');
+  const txt=document.getElementById('estado-txt');
+  if(!dot||!txt) return;
+  if(!S.estadoTs){
+    dot.className='dot dot-no';
+    txt.textContent='Sin estado de Sheets — toca Actualizar';
+  }else{
+    const mins=Math.round((new Date()-S.estadoTs)/60000);
+    dot.className='dot dot-ok';
+    txt.textContent=`Sheets: ${S.estadoGlobal.length} reg. · hace ${mins<1?'<1':mins} min`;
+  }
+}
+
+// Obtener registros globales de una casilla específica
+function getEstadoCasilla(seccion, id_casilla){
+  return S.estadoGlobal.filter(r=>
+    String(r.seccion)===String(seccion) &&
+    String(r.id_casilla)===String(id_casilla)
+  );
+}
+
+// Actualizar visual de roles según estado global de la casilla seleccionada
+function actualizarRolesGlobal(){
+  if(!S.cCasilla) return;
+  const regsGlobal=getEstadoCasilla(S.cCasilla.seccion, S.cCasilla.id_casilla);
+  const roles=['PROPIETARIO','SUPLENTE'];
+  roles.forEach(rol=>{
+    const key=rol==='PROPIETARIO'?'prop':'sup';
+    const card=document.getElementById(`rol-${key}`);
+    const lbl=document.getElementById(`bloq-${key}`);
+    if(!card||!lbl) return;
+    const ocupado=regsGlobal.some(r=>r.rol===rol);
+    if(ocupado){
+      card.classList.add('bloqueado');
+      lbl.style.display='block';
+      // Si estaba seleccionado este rol, deseleccionar
+      if(S.cRol===rol){ S.cRol=null; card.classList.remove('sel'); }
+    }else{
+      card.classList.remove('bloqueado');
+      lbl.style.display='none';
+    }
+  });
+}
+
+function selRolSiDisponible(rol, el){
+  // Verificar si está bloqueado globalmente
+  if(el.classList.contains('bloqueado')){
+    toast(`⚠ ${rol} ya está asignado en Sheets para esta casilla`,'err');
+    return;
+  }
+  selRol(rol, el);
+}
+
+// ══════════════════════════════════════════
+// CASILLA GRID — con estado global
 // ══════════════════════════════════════════
 function renderCasGrid(){
   const sec=S.cSeccion.seccion;
@@ -1029,9 +1157,29 @@ function renderCasGrid(){
   document.getElementById('c-btn-s2').disabled=true;
   document.getElementById('c-cas-info').style.display='none';
   S.cCasilla=null;
+  actualizarBannerEstado();
   g.innerHTML=cas.map(c=>{
-    const reps=S.registros.filter(r=>r.tipo_reg==='casilla'&&r.seccion===sec&&r.id_casilla===c.id_casilla);
-    return`<div class="cas-chip${reps.length?' has':''}" onclick="selCCas('${c.id_casilla}')" data-cas="${c.id_casilla}"><div class="cid">${c.id_casilla}</div><div class="ctp">${c.tipo_casilla}</div>${reps.length?`<div class="crep">${reps.length}rep</div>`:''}</div>`;
+    // Registros locales
+    const repsLocal=S.registros.filter(r=>r.tipo_reg==='casilla'&&r.seccion===sec&&r.id_casilla===c.id_casilla);
+    // Registros globales desde Sheets
+    const repsGlobal=getEstadoCasilla(sec, c.id_casilla);
+    // Determinar clase visual
+    let cls='';
+    let ico='';
+    if(repsGlobal.length>=2){
+      cls='g-full'; ico='<div class="g-ico">🔒</div>';
+    }else if(repsGlobal.length===1){
+      cls='g-partial'; ico=`<div class="g-ico" style="color:var(--amber)">½</div>`;
+    }else if(repsLocal.length>0){
+      cls='has-local';
+    }
+    const repTxt=repsGlobal.length?`<div class="crep">${repsGlobal.map(r=>r.rol==='PROPIETARIO'?'P':'S').join('+')} Sheets</div>`:
+                 repsLocal.length?`<div class="crep">${repsLocal.length} local</div>`:'';
+    return`<div class="cas-chip${cls?' '+cls:''}" onclick="selCCas('${c.id_casilla}')" data-cas="${c.id_casilla}">
+      <div class="cid">${c.id_casilla}</div>
+      <div class="ctp">${c.tipo_casilla}</div>
+      ${repTxt}${ico}
+    </div>`;
   }).join('');
 }
 function selCCas(id){
@@ -1040,12 +1188,23 @@ function selCCas(id){
   S.cCasilla=item;
   document.querySelectorAll('.cas-chip').forEach(c=>c.classList.remove('sel'));
   document.querySelector(`[data-cas="${id}"]`)?.classList.add('sel');
-  const reps=S.registros.filter(r=>r.tipo_reg==='casilla'&&r.seccion===sec&&r.id_casilla===id);
+  const repsLocal=S.registros.filter(r=>r.tipo_reg==='casilla'&&r.seccion===sec&&r.id_casilla===id);
+  const repsGlobal=getEstadoCasilla(sec, id);
   document.getElementById('c-cas-info').style.display='block';
   document.getElementById('c-cas-title').textContent=`Casilla ${id} — Sec. ${sec}`;
   document.getElementById('c-cas-tipo').textContent=item.tipo_casilla;
-  document.getElementById('c-cas-reps').textContent=reps.length?`${reps.length} representante(s)`:'Sin representantes aún';
+  // Mostrar estado combinado
+  let repsTexto='Sin representantes registrados';
+  if(repsGlobal.length>0){
+    repsTexto=`Sheets: ${repsGlobal.map(r=>r.rol).join(', ')}`;
+    if(repsLocal.length>0) repsTexto+=` · Local: ${repsLocal.length}`;
+  }else if(repsLocal.length>0){
+    repsTexto=`Local: ${repsLocal.length} representante(s) pendiente(s) de sincronizar`;
+  }
+  document.getElementById('c-cas-reps').textContent=repsTexto;
   document.getElementById('c-btn-s2').disabled=false;
+  // Actualizar disponibilidad de roles
+  actualizarRolesGlobal();
 }
 
 // ══════════════════════════════════════════
