@@ -993,7 +993,7 @@ async function guardarCasilla(){
   await loadReg();
   toast('✓ Registro guardado','ok');
   resetCasilla();volverTipo();showScreen('registros');
-  if(S.cfg.scriptUrl)syncNow(true);
+ if(S.cfg.scriptUrl) setTimeout(()=>syncNow(true), 800);
 }
 function resetCasilla(){
   S.cStep=1;S.cSeccion=null;S.cCasilla=null;S.cRol=null;S.cPartido=null;S.fotoFrente=null;S.fotoReverso=null;
