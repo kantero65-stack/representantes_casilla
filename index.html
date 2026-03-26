@@ -993,7 +993,7 @@ async function guardarCasilla(){
   await loadReg();
   toast('✓ Registro guardado','ok');
   resetCasilla();volverTipo();showScreen('registros');
- if(S.cfg.scriptUrl) setTimeout(()=>syncNow(true), 800);
+  if(S.cfg.scriptUrl) setTimeout(()=>syncNow(true), 1200);
 }
 function resetCasilla(){
   S.cStep=1;S.cSeccion=null;S.cCasilla=null;S.cRol=null;S.cPartido=null;S.fotoFrente=null;S.fotoReverso=null;
@@ -1078,7 +1078,7 @@ async function guardarGeneral(){
   await loadReg();
   toast('✓ General guardado','ok');
   resetGeneral();volverTipo();showScreen('registros');
-  if(S.cfg.scriptUrl)syncNow(true);
+  if(S.cfg.scriptUrl) setTimeout(()=>syncNow(true), 1200);
 }
 function resetGeneral(){
   S.gStep=1;S.gSecciones=[];S.gPartido=null;
@@ -1149,18 +1149,17 @@ async function descargarEstado(){
       S.estadoGlobal=data.registros||[];
       S.estadoTs=new Date();
       actualizarBannerEstado();
-      // Si estamos en el grid de casillas, refrescar
       if(S.cSeccion) renderCasGrid();
-      // Si tenemos casilla seleccionada, refrescar roles
       if(S.cCasilla) actualizarRolesGlobal();
-      toast(`✓ Estado actualizado — ${S.estadoGlobal.length} registros en Sheets`,'ok');
+      toast(`✓ Estado actualizado — ${S.estadoGlobal.length} registros`,'ok');
     }else{
-      toast('Error al obtener estado: '+data.message,'err');
+      toast('Error: '+data.message,'err');
     }
   }catch(e){
     toast('Sin conexión o error en el Script','err');
+  }finally{
+    if(btn) btn.classList.remove('spin');
   }
-  if(btn) btn.classList.remove('spin');
 }
 
 function actualizarBannerEstado(){
@@ -1375,7 +1374,21 @@ function updateDash(){
   const keys=Object.keys(secMap).sort((a,b)=>Number(a)-Number(b));
   const list=document.getElementById('cov-list');
   if(!keys.length){list.innerHTML='<div style="padding:28px;text-align:center;font-size:13px;color:var(--muted)">Descarga el catálogo para ver cobertura</div>';return;}
-  list.innerHTML=keys.map(sec=>{const{tot,cov}=secMap[sec],pct=tot?Math.round(cov/tot*100):0;return`<div class="cov-item"><div class="cov-sec">${sec}</div><div class="cov-bar-w"><div class="cov-bar-lbl"><span>${cov}/${tot}</span><span>${pct}%</span></div><div class="cov-bar"><div class="cov-fill" style="width:${pct}%"></div></div></div></div>`;}).join('');
+  list.innerHTML=keys.map(sec=>{
+    const{tot,cov}=secMap[sec],pct=tot?Math.round(cov/tot*100):0;
+    const tieneGen=S.registros.some(r=>r.tipo_reg==='general'&&r.secciones&&r.secciones.includes(sec));
+    const genBadge=tieneGen?`<span style="background:var(--purple-bg);color:var(--purple);font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px;font-family:var(--fh)">GEN</span>`:'';
+    return`<div class="cov-item">
+      <div class="cov-sec">${sec}</div>
+      <div class="cov-bar-w">
+        <div class="cov-bar-lbl">
+          <span>${cov}/${tot} casillas${genBadge}</span>
+          <span>${pct}%</span>
+        </div>
+        <div class="cov-bar"><div class="cov-fill" style="width:${pct}%"></div></div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ══════════════════════════════════════════
@@ -1394,7 +1407,7 @@ async function syncNow(silent=false){
   let ok=0,err=0;
   for(const reg of pend){
     try{
-      await fetch(S.cfg.scriptUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(reg)});
+      await fetch(S.cfg.scriptUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(reg)});
       reg.synced=true;reg.sync_error=null;await dbPut('registros',reg);ok++;
     }catch(e){reg.sync_error=e.message||'Error';await dbPut('registros',reg);err++;}
   }
