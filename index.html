@@ -280,6 +280,17 @@ body{font-family:var(--fb);color:var(--text);font-size:15px;line-height:1.5}
 .empty h3{font-family:var(--fh);font-size:19px;font-weight:700;color:var(--text);margin-bottom:5px}
 .empty p{font-size:13px}
 
+/* GENERALES EN DASHBOARD */
+.gen-list{padding:0 16px}
+.gen-item{background:var(--surface);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:3px solid var(--purple)}
+.gen-item-hdr{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.gen-id{background:var(--purple);color:#fff;border-radius:5px;padding:2px 9px;font-family:var(--fh);font-size:13px;font-weight:700;flex-shrink:0}
+.gen-nombre{font-size:13px;font-weight:600;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gen-partido{font-size:11px;font-weight:700;color:var(--purple);font-family:var(--fh)}
+.gen-tel{font-size:11px;color:var(--muted);font-family:var(--fm)}
+.gen-secs{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.gen-sec-tag{background:var(--purple-bg);color:var(--purple);border-radius:10px;padding:2px 8px;font-size:10px;font-weight:700;font-family:var(--fh)}
+
 /* TOAST / OVERLAY */
 .toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);left:50%;transform:translateX(-50%) translateY(16px);background:#1a2033;color:#fff;border-radius:24px;padding:10px 20px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;pointer-events:none;z-index:9999;white-space:nowrap;max-width:90vw}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -399,6 +410,8 @@ body{font-family:var(--fb);color:var(--text);font-size:15px;line-height:1.5}
   </div>
   <div class="sec-lbl">Cobertura por sección</div>
   <div class="cov-list" id="cov-list"><div style="padding:28px;text-align:center;font-size:13px;color:var(--muted)">Sin datos aún</div></div>
+  <div class="sec-lbl" id="gen-dash-lbl" style="display:none">Representantes Generales</div>
+  <div class="gen-list" id="gen-dash-list"></div>
   <div style="height:20px"></div>
 </div>
 
@@ -1369,26 +1382,59 @@ function updateDash(){
   const badge=document.getElementById('sync-badge');
   if(pend>0){badge.textContent=pend;badge.style.display='inline-flex';document.getElementById('big-sync').classList.add('pending');document.getElementById('big-sync-lbl').textContent=`Sincronizar ${pend} pendiente${pend>1?'s':''}`;}
   else{badge.style.display='none';document.getElementById('big-sync').classList.remove('pending');document.getElementById('big-sync-lbl').textContent='Sincronizar con Google Sheets';}
+
+  // Cobertura por sección (casillas)
   const secMap={};
   S.catalogo.forEach(c=>{if(!secMap[c.seccion])secMap[c.seccion]={tot:0,cov:0};secMap[c.seccion].tot++;if(S.registros.some(x=>x.tipo_reg==='casilla'&&x.seccion===c.seccion&&x.id_casilla===c.id_casilla))secMap[c.seccion].cov++;});
   const keys=Object.keys(secMap).sort((a,b)=>Number(a)-Number(b));
   const list=document.getElementById('cov-list');
-  if(!keys.length){list.innerHTML='<div style="padding:28px;text-align:center;font-size:13px;color:var(--muted)">Descarga el catálogo para ver cobertura</div>';return;}
-  list.innerHTML=keys.map(sec=>{
-    const{tot,cov}=secMap[sec],pct=tot?Math.round(cov/tot*100):0;
-    const tieneGen=S.registros.some(r=>r.tipo_reg==='general'&&r.secciones&&r.secciones.includes(sec));
-    const genBadge=tieneGen?`<span style="background:var(--purple-bg);color:var(--purple);font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px;font-family:var(--fh)">GEN</span>`:'';
-    return`<div class="cov-item">
-      <div class="cov-sec">${sec}</div>
-      <div class="cov-bar-w">
-        <div class="cov-bar-lbl">
-          <span>${cov}/${tot} casillas${genBadge}</span>
-          <span>${pct}%</span>
+  if(!keys.length){list.innerHTML='<div style="padding:28px;text-align:center;font-size:13px;color:var(--muted)">Descarga el catálogo para ver cobertura</div>';}
+  else{
+    list.innerHTML=keys.map(sec=>{
+      const{tot,cov}=secMap[sec],pct=tot?Math.round(cov/tot*100):0;
+      const tieneGen=S.registros.some(r=>r.tipo_reg==='general'&&r.secciones&&r.secciones.includes(sec));
+      const genBadge=tieneGen?`<span style="background:var(--purple-bg);color:var(--purple);font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px;font-family:var(--fh)">GEN</span>`:'';
+      return`<div class="cov-item">
+        <div class="cov-sec">${sec}</div>
+        <div class="cov-bar-w">
+          <div class="cov-bar-lbl"><span>${cov}/${tot} casillas${genBadge}</span><span>${pct}%</span></div>
+          <div class="cov-bar"><div class="cov-fill" style="width:${pct}%"></div></div>
         </div>
-        <div class="cov-bar"><div class="cov-fill" style="width:${pct}%"></div></div>
-      </div>
-    </div>`;
-  }).join('');
+      </div>`;
+    }).join('');
+  }
+
+  // Lista de Representantes Generales con ID secuencial
+  const generales=S.registros.filter(x=>x.tipo_reg==='general').sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+  const genLbl=document.getElementById('gen-dash-lbl');
+  const genList=document.getElementById('gen-dash-list');
+  if(!generales.length){
+    genLbl.style.display='none';
+    genList.innerHTML='';
+  }else{
+    genLbl.style.display='block';
+    genList.innerHTML=generales.map((g,i)=>{
+      const id=String(i+1).padStart(2,'0');
+      const secs=(g.secciones||[]).map(s=>`<span class="gen-sec-tag">${s}</span>`).join('');
+      const syncSt=g.sync_error
+        ?`<span style="font-size:10px;color:var(--red);font-weight:700">Error</span>`
+        :g.synced
+        ?`<span style="font-size:10px;color:var(--green);font-weight:700">✓ Sync</span>`
+        :`<span style="font-size:10px;color:var(--amber);font-weight:700">Pendiente</span>`;
+      return`<div class="gen-item">
+        <div class="gen-item-hdr">
+          <div class="gen-id">ID ${id}</div>
+          <div class="gen-nombre">${g.nombre}</div>
+          ${syncSt}
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div class="gen-partido">${g.partido}</div>
+          <div class="gen-tel">${g.telefono||'Sin teléfono'}</div>
+        </div>
+        <div class="gen-secs">${secs}</div>
+      </div>`;
+    }).join('');
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1407,9 +1453,23 @@ async function syncNow(silent=false){
   let ok=0,err=0;
   for(const reg of pend){
     try{
-      await fetch(S.cfg.scriptUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(reg)});
-      reg.synced=true;reg.sync_error=null;await dbPut('registros',reg);ok++;
-    }catch(e){reg.sync_error=e.message||'Error';await dbPut('registros',reg);err++;}
+      // no-cors es necesario para Apps Script — no devuelve CORS headers
+      // Si no lanza excepción asumimos que llegó correctamente
+      await fetch(S.cfg.scriptUrl,{
+        method:'POST',
+        mode:'no-cors',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(reg)
+      });
+      reg.synced=true;
+      reg.sync_error=null;
+      await dbPut('registros',reg);
+      ok++;
+    }catch(e){
+      reg.sync_error=e.message||'Error de red';
+      await dbPut('registros',reg);
+      err++;
+    }
   }
   await loadReg();
   syncing=false;
