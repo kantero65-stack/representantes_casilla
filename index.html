@@ -848,8 +848,8 @@ const S={
   // común
   catalogo:[], registros:[], filtro:'all',
   // estado global desde Sheets
-  estadoGlobal:[], estadoTs:null,
-  cfg:{municipio:'',capturista:'',scriptUrl:'',partidos:'PAN'}
+  estadoGlobal:[], generalesGlobal:[], estadoTs:null,
+  cfg:{municipio:'',capturista:'',scriptUrl:'',partidos:'MORENA'}
 };
 
 // ══════════════════════════════════════════
@@ -883,7 +883,7 @@ async function loadCfg(){
   document.getElementById('cfg-muni').value=S.cfg.municipio||'';
   document.getElementById('cfg-cap').value=S.cfg.capturista||'';
   document.getElementById('cfg-url').value=S.cfg.scriptUrl||'';
-  document.getElementById('cfg-par').value=S.cfg.partidos||'PAN';
+  document.getElementById('cfg-par').value=S.cfg.partidos||'MORENA';
   refreshHdr();
 }
 async function saveCfg(){
@@ -1006,7 +1006,7 @@ async function guardarCasilla(){
   await loadReg();
   toast('✓ Registro guardado','ok');
   resetCasilla();volverTipo();showScreen('registros');
-  if(S.cfg.scriptUrl) setTimeout(()=>syncNow(true), 1200);
+  if(S.cfg.scriptUrl && navigator.onLine) syncNow(true);
 }
 function resetCasilla(){
   S.cStep=1;S.cSeccion=null;S.cCasilla=null;S.cRol=null;S.cPartido=null;S.fotoFrente=null;S.fotoReverso=null;
@@ -1091,7 +1091,7 @@ async function guardarGeneral(){
   await loadReg();
   toast('✓ General guardado','ok');
   resetGeneral();volverTipo();showScreen('registros');
-  if(S.cfg.scriptUrl) setTimeout(()=>syncNow(true), 1200);
+  if(S.cfg.scriptUrl && navigator.onLine) syncNow(true);
 }
 function resetGeneral(){
   S.gStep=1;S.gSecciones=[];S.gPartido=null;
@@ -1159,12 +1159,14 @@ async function descargarEstado(){
     const resp=await fetch(S.cfg.scriptUrl+'?action=estado');
     const data=await resp.json();
     if(data.status==='OK'){
-      S.estadoGlobal=data.registros||[];
+      S.estadoGlobal   = data.registros   || [];
+      S.generalesGlobal= data.generales   || [];
       S.estadoTs=new Date();
       actualizarBannerEstado();
       if(S.cSeccion) renderCasGrid();
       if(S.cCasilla) actualizarRolesGlobal();
-      toast(`✓ Estado actualizado — ${S.estadoGlobal.length} registros`,'ok');
+      updateDash();
+      toast(`✓ Estado: ${S.estadoGlobal.length} rep · ${S.generalesGlobal.length} generales`,'ok');
     }else{
       toast('Error: '+data.message,'err');
     }
@@ -1404,34 +1406,49 @@ function updateDash(){
     }).join('');
   }
 
-  // Lista de Representantes Generales con ID secuencial
-  const generales=S.registros.filter(x=>x.tipo_reg==='general').sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+  // Lista de Representantes Generales — combina locales + Sheets
+  const generalesLocal=S.registros.filter(x=>x.tipo_reg==='general').sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+  // Generales de Sheets que NO están en locales (por INE)
+  const inesLocales=new Set(generalesLocal.map(g=>g.ine));
+  const soloSheets=S.generalesGlobal.filter(g=>!inesLocales.has(g.ine));
+  // Combinar: primero locales (con estado sync), luego los de Sheets no locales
+  const todosGenerales=[
+    ...generalesLocal.map(g=>({...g, fuente:'local'})),
+    ...soloSheets.map(g=>({...g, fuente:'sheets', synced:true}))
+  ];
   const genLbl=document.getElementById('gen-dash-lbl');
   const genList=document.getElementById('gen-dash-list');
-  if(!generales.length){
+  if(!todosGenerales.length){
     genLbl.style.display='none';
     genList.innerHTML='';
   }else{
     genLbl.style.display='block';
-    genList.innerHTML=generales.map((g,i)=>{
+    // Secciones totales del catálogo
+    const secsTotales=new Set(S.catalogo.map(c=>c.seccion));
+    const secsConGeneral=new Set(todosGenerales.flatMap(g=>g.secciones||[]));
+    const secsPendientes=secsTotales.size - secsConGeneral.size;
+    genLbl.innerHTML=`Representantes Generales &nbsp;<span style="font-size:10px;color:var(--muted);font-weight:400">${secsConGeneral.size} secciones asignadas · ${secsPendientes} pendientes</span>`;
+    genList.innerHTML=todosGenerales.map((g,i)=>{
       const id=String(i+1).padStart(2,'0');
       const secs=(g.secciones||[]).map(s=>`<span class="gen-sec-tag">${s}</span>`).join('');
-      const syncSt=g.sync_error
-        ?`<span style="font-size:10px;color:var(--red);font-weight:700">Error</span>`
+      const fuenteTag=g.fuente==='sheets'
+        ?`<span style="font-size:9px;background:var(--green-bg);color:var(--green);font-weight:700;padding:1px 6px;border-radius:8px">Sheets</span>`
+        :g.sync_error
+        ?`<span style="font-size:9px;color:var(--red);font-weight:700">Error</span>`
         :g.synced
-        ?`<span style="font-size:10px;color:var(--green);font-weight:700">✓ Sync</span>`
-        :`<span style="font-size:10px;color:var(--amber);font-weight:700">Pendiente</span>`;
+        ?`<span style="font-size:9px;color:var(--green);font-weight:700">✓ Sync</span>`
+        :`<span style="font-size:9px;color:var(--amber);font-weight:700">Pendiente</span>`;
       return`<div class="gen-item">
         <div class="gen-item-hdr">
           <div class="gen-id">ID ${id}</div>
           <div class="gen-nombre">${g.nombre}</div>
-          ${syncSt}
+          ${fuenteTag}
         </div>
         <div style="display:flex;gap:12px;align-items:center">
-          <div class="gen-partido">${g.partido}</div>
+          <div class="gen-partido">${g.partido||''}</div>
           <div class="gen-tel">${g.telefono||'Sin teléfono'}</div>
         </div>
-        <div class="gen-secs">${secs}</div>
+        <div class="gen-secs">${secs||'<span style="font-size:10px;color:var(--muted)">Sin secciones</span>'}</div>
       </div>`;
     }).join('');
   }
