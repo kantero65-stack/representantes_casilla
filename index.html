@@ -288,6 +288,39 @@ body{font-family:var(--fb);color:var(--text);font-size:15px;line-height:1.5}
 .overlay.show{display:flex}
 .ov-card{background:var(--surface);border-radius:var(--r);padding:24px 32px;text-align:center}
 .spinner{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+
+/* CONSULTA */
+.consulta-wrap{padding:16px 16px 80px}
+.consulta-hdr{background:var(--navy);border-radius:var(--r);padding:16px;margin-bottom:16px;color:#fff}
+.consulta-hdr h2{font-family:var(--fh);font-size:20px;font-weight:700;margin-bottom:3px}
+.consulta-hdr p{font-size:12px;color:rgba(255,255,255,.55)}
+.consulta-result{margin-top:16px}
+.result-card{background:var(--surface);border-radius:var(--r);overflow:hidden;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.result-hdr{padding:12px 16px;display:flex;align-items:center;gap:10px}
+.result-hdr.libre{background:var(--green-bg)}
+.result-hdr.ocupado{background:var(--navy)}
+.result-hdr.parcial{background:var(--amber-bg)}
+.result-hdr h3{font-family:var(--fh);font-size:17px;font-weight:700}
+.result-hdr.libre h3{color:var(--green)}
+.result-hdr.ocupado h3{color:#fff}
+.result-hdr.parcial h3{color:var(--amber)}
+.result-hdr svg{width:17px;height:17px;flex-shrink:0}
+.result-hdr.libre svg{color:var(--green)}
+.result-hdr.ocupado svg{color:#fff}
+.result-hdr.parcial svg{color:var(--amber)}
+.rep-row{display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid var(--border);gap:12px}
+.rep-row:last-child{border-bottom:none}
+.rep-av{width:36px;height:36px;border-radius:18px;background:var(--navy);color:#fff;font-family:var(--fh);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rep-av.sup{background:var(--green)}
+.rep-info{flex:1;min-width:0}
+.rep-nombre{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.rep-rol{font-size:11px;color:var(--muted);margin-top:2px}
+.rep-partido{font-size:11px;font-weight:700;font-family:var(--fh);color:var(--navy);margin-top:1px}
+.rep-tel{font-size:10px;color:var(--light);font-family:var(--fm);margin-top:2px}
+.libre-ico{width:48px;height:48px;border-radius:24px;background:var(--green-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+.libre-ico svg{width:24px;height:24px;color:var(--green)}
+.consultando{text-align:center;padding:32px;color:var(--muted);font-size:13px}
+.consultando .mini-spin{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px}
 </style>
 </head>
 <body>
@@ -320,6 +353,10 @@ body{font-family:var(--fb);color:var(--text);font-size:15px;line-height:1.5}
     <div class="nav-tab" onclick="showScreen('registros')" data-sc="registros">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       Registros
+    </div>
+    <div class="nav-tab" onclick="showScreen('consulta')" data-sc="consulta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      Consulta
     </div>
     <div class="nav-tab" onclick="showScreen('config')" data-sc="config">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -751,8 +788,38 @@ body{font-family:var(--fb);color:var(--text);font-size:15px;line-height:1.5}
   </div>
 </div>
 
+<!-- ══════════ CONSULTA ══════════ -->
+<div class="screen" id="screen-consulta">
+  <div class="consulta-wrap">
+    <div class="consulta-hdr">
+      <h2>Consulta de Casilla</h2>
+      <p>Busca quién está asignado a cualquier casilla en Sheets</p>
+    </div>
+
+    <div class="fld">
+      <label>Sección Electoral</label>
+      <div class="srch-wrap">
+        <div class="srch-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+        <input type="search" id="q-sec-search" placeholder="Buscar sección..." oninput="searchSec(this.value,'q')" onfocus="openSearch('q')" autocomplete="off" inputmode="numeric">
+      </div>
+      <div class="srch-res" id="q-sec-res"></div>
+    </div>
+
+    <div class="fld" id="q-cas-fld" style="display:none">
+      <label>Casilla</label>
+      <div class="cas-grid" id="q-cas-grid"></div>
+    </div>
+
+    <button class="btn btn-primary" id="q-btn-consultar" onclick="consultarCasilla()" disabled style="margin-top:4px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      Consultar en Sheets
+    </button>
+
+    <div class="consulta-result" id="q-result"></div>
+  </div>
 </div>
-<div class="toast" id="toast"></div>
+
+</div><!-- cierre #app -->
 <div class="overlay" id="overlay"><div class="ov-card"><div class="spinner"></div><p id="ov-msg" style="font-size:13px;color:var(--muted)">Procesando...</p></div></div>
 
 <script>
@@ -1043,14 +1110,18 @@ function searchSec(q,prefijo){
   if(!found.length){r.innerHTML=`<div class="srch-item" style="color:var(--muted)">Sin resultados</div>`;r.classList.add('open');return;}
   r.innerHTML=found.map(s=>{
     const n=S.catalogo.filter(c=>c.seccion===s.seccion).length;
-    const fn=prefijo==='g'?`addGenSec('${s.seccion}')`:`selCSec('${s.seccion}')`;
+    let fn;
+    if(prefijo==='g') fn=`addGenSec('${s.seccion}')`;
+    else if(prefijo==='q') fn=`selQSec('${s.seccion}')`;
+    else fn=`selCSec('${s.seccion}')`;
     return`<div class="srch-item" onclick="${fn}"><span class="sec-badge">${s.seccion}</span><span class="sub">${n} casilla${n>1?'s':''}</span></div>`;
   }).join('');
   r.classList.add('open');
 }
 function openSearch(prefijo){
   if(!S.catalogo.length){toast('Descarga el catálogo desde Config','err');return;}
-  searchSec(document.getElementById(`${prefijo}-sec-search`).value,prefijo);
+  const inp=document.getElementById(`${prefijo}-sec-search`);
+  searchSec(inp?inp.value:'',prefijo);
 }
 function selCSec(sec){
   S.cSeccion={seccion:sec};
@@ -1343,6 +1414,116 @@ async function testConn(){
 }
 
 // ══════════════════════════════════════════
+// CONSULTA DE CASILLA EN SHEETS
+// ══════════════════════════════════════════
+const QS = { seccion:null, casilla:null };
+
+function selQSec(sec){
+  QS.seccion = sec;
+  QS.casilla = null;
+  document.getElementById('q-sec-search').value = sec;
+  document.getElementById('q-sec-res').classList.remove('open');
+  document.getElementById('q-btn-consultar').disabled = true;
+  document.getElementById('q-result').innerHTML = '';
+  // Mostrar grid de casillas
+  const cas = S.catalogo.filter(c=>c.seccion===sec);
+  const g = document.getElementById('q-cas-grid');
+  g.innerHTML = cas.map(c=>`
+    <div class="cas-chip" onclick="selQCas('${c.id_casilla}')" data-qcas="${c.id_casilla}">
+      <div class="cid">${c.id_casilla}</div>
+      <div class="ctp">${c.tipo_casilla}</div>
+    </div>`).join('');
+  document.getElementById('q-cas-fld').style.display = 'block';
+}
+
+function selQCas(id){
+  QS.casilla = id;
+  document.querySelectorAll('[data-qcas]').forEach(c=>c.classList.remove('sel'));
+  document.querySelector(`[data-qcas="${id}"]`)?.classList.add('sel');
+  document.getElementById('q-btn-consultar').disabled = false;
+  document.getElementById('q-result').innerHTML = '';
+}
+
+async function consultarCasilla(){
+  if(!QS.seccion || !QS.casilla){ toast('Selecciona sección y casilla','err'); return; }
+  if(!S.cfg.scriptUrl){ toast('Configura la URL del Script primero','err'); return; }
+  if(!navigator.onLine){ toast('Sin conexión — consulta no disponible offline','err'); return; }
+
+  const res = document.getElementById('q-result');
+  res.innerHTML = `<div class="consultando"><div class="mini-spin"></div>Consultando Sheets...</div>`;
+
+  try{
+    const url = `${S.cfg.scriptUrl}?action=consulta&seccion=${encodeURIComponent(QS.seccion)}&casilla=${encodeURIComponent(QS.casilla)}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if(data.status !== 'OK'){ res.innerHTML=`<div class="consultando">⚠ Error: ${data.message||'Sin respuesta'}</div>`; return; }
+
+    const reps = data.representantes || [];
+    const clave = `${QS.seccion}-${QS.casilla}`;
+
+    if(reps.length === 0){
+      res.innerHTML = `
+        <div class="result-card">
+          <div class="result-hdr libre">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <h3>Casilla ${QS.casilla} — Sección ${QS.seccion}</h3>
+          </div>
+          <div style="text-align:center;padding:24px">
+            <div class="libre-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <div style="font-family:var(--fh);font-size:17px;font-weight:700;color:var(--green)">Sin representantes asignados</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">Esta casilla está disponible en Sheets</div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    // Tiene representantes
+    const tieneProp = reps.some(r=>r.rol==='PROPIETARIO');
+    const tieneSup  = reps.some(r=>r.rol==='SUPLENTE');
+    const completa  = tieneProp && tieneSup;
+    const estadoCls = completa ? 'ocupado' : 'parcial';
+    const estadoTxt = completa ? `Casilla ${QS.casilla} — Completa` : `Casilla ${QS.casilla} — Cobertura parcial`;
+    const iconoHdr  = completa
+      ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+
+    const filas = reps.map(r=>{
+      const esProp = r.rol==='PROPIETARIO';
+      const ini = ((r.nombre||'?')[0]).toUpperCase();
+      const tel = r.telefono ? `<div class="rep-tel">${r.telefono}</div>` : '';
+      return `
+        <div class="rep-row">
+          <div class="rep-av${esProp?'':' sup'}">${ini}</div>
+          <div class="rep-info">
+            <div class="rep-nombre">${r.nombre}</div>
+            <div class="rep-rol">${r.rol}</div>
+            <div class="rep-partido">${r.partido}</div>
+            ${tel}
+          </div>
+        </div>`;
+    }).join('');
+
+    // Mostrar roles faltantes
+    let faltantes = '';
+    if(!tieneProp) faltantes += `<div class="rep-row"><div class="rep-av" style="background:var(--border);color:var(--muted)">?</div><div class="rep-info"><div class="rep-nombre" style="color:var(--muted)">Sin propietario asignado</div><div class="rep-rol" style="color:var(--red);font-weight:700">FALTA CUBRIR</div></div></div>`;
+    if(!tieneSup)  faltantes += `<div class="rep-row"><div class="rep-av sup" style="background:var(--border);color:var(--muted)">?</div><div class="rep-info"><div class="rep-nombre" style="color:var(--muted)">Sin suplente asignado</div><div class="rep-rol" style="color:var(--red);font-weight:700">FALTA CUBRIR</div></div></div>`;
+
+    res.innerHTML = `
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-align:right">
+        Sección ${QS.seccion} · Casilla ${QS.casilla} · ${new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}
+      </div>
+      <div class="result-card">
+        <div class="result-hdr ${estadoCls}">${iconoHdr}<h3>${estadoTxt}</h3></div>
+        ${filas}${faltantes}
+      </div>`;
+
+  } catch(e){
+    res.innerHTML = `<div class="consultando">⚠ Error al conectar con Sheets</div>`;
+  }
+}
+
+// ══════════════════════════════════════════
 // NAVEGACIÓN
 // ══════════════════════════════════════════
 function showScreen(name){
@@ -1353,6 +1534,15 @@ function showScreen(name){
   if(name==='dashboard')updateDash();
   if(name==='registros')renderReg();
   if(name==='config')updateCatStatus();
+  if(name==='consulta'){
+    // Reset consulta al entrar
+    document.getElementById('q-sec-search').value='';
+    document.getElementById('q-sec-res').classList.remove('open');
+    document.getElementById('q-cas-fld').style.display='none';
+    document.getElementById('q-btn-consultar').disabled=true;
+    document.getElementById('q-result').innerHTML='';
+    QS.seccion=null; QS.casilla=null;
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1373,6 +1563,7 @@ async function init(){
   document.addEventListener('click',e=>{
     if(!e.target.closest('#c-sec-search')&&!e.target.closest('#c-sec-res'))document.getElementById('c-sec-res').classList.remove('open');
     if(!e.target.closest('#g-sec-search')&&!e.target.closest('#g-sec-res'))document.getElementById('g-sec-res').classList.remove('open');
+    if(!e.target.closest('#q-sec-search')&&!e.target.closest('#q-sec-res'))document.getElementById('q-sec-res').classList.remove('open');
   });
   window.addEventListener('online',()=>toast('Conexión restaurada','ok'));
   window.addEventListener('offline',()=>toast('Sin conexión — modo offline',''));
