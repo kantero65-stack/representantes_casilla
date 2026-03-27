@@ -390,6 +390,7 @@ body{font-family:var(--fb);color:var(--text);font-size:15px;line-height:1.5}
         <div class="dash-total-lbl">Generales</div>
       </div>
     </div>
+    <div id="dash-global-lbl" style="font-size:11px;color:rgba(255,255,255,.45);margin-top:8px;display:none"></div>
   </div>
   <div class="stats-row">
     <div class="stat-card"><div class="stat-val g" id="st-sync">0</div><div class="stat-lbl">Sincronizados</div></div>
@@ -796,6 +797,13 @@ body{font-family:var(--fb);color:var(--text);font-size:15px;line-height:1.5}
         <button class="btn btn-secondary" onclick="exportJSON()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar JSON</button>
         <button class="btn btn-danger" onclick="clearAll()">Borrar todo</button>
       </div>
+      <div style="margin-top:8px">
+        <button class="btn btn-secondary" onclick="recuperarDeSheets()" style="border-color:var(--green);color:var(--green)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Recuperar registros de Sheets
+        </button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">Usa esto si borraste los datos locales por error — descarga todo desde Google Sheets</div>
     </div>
     <div style="height:20px"></div>
   </div>
@@ -849,7 +857,7 @@ const S={
   catalogo:[], registros:[], filtro:'all',
   // estado global desde Sheets
   estadoGlobal:[], generalesGlobal:[], estadoTs:null,
-  cfg:{municipio:'',capturista:'',scriptUrl:'',partidos:'PAN'}
+  cfg:{municipio:'',capturista:'',scriptUrl:'',partidos:'MORENA'}
 };
 
 // ══════════════════════════════════════════
@@ -883,7 +891,7 @@ async function loadCfg(){
   document.getElementById('cfg-muni').value=S.cfg.municipio||'';
   document.getElementById('cfg-cap').value=S.cfg.capturista||'';
   document.getElementById('cfg-url').value=S.cfg.scriptUrl||'';
-  document.getElementById('cfg-par').value=S.cfg.partidos||'PAN';
+  document.getElementById('cfg-par').value=S.cfg.partidos||'MORENA';
   refreshHdr();
 }
 async function saveCfg(){
@@ -1006,7 +1014,7 @@ async function guardarCasilla(){
   await loadReg();
   toast('✓ Registro guardado','ok');
   resetCasilla();volverTipo();showScreen('registros');
-  if(S.cfg.scriptUrl && navigator.onLine) syncNow(true);
+  syncOne(reg);
 }
 function resetCasilla(){
   S.cStep=1;S.cSeccion=null;S.cCasilla=null;S.cRol=null;S.cPartido=null;S.fotoFrente=null;S.fotoReverso=null;
@@ -1085,13 +1093,36 @@ async function guardarGeneral(){
   const tel=document.getElementById('g-tel').value.replace(/\D/g,'');
   const not=document.getElementById('g-not').value.trim();
   const telF=`${tel.slice(0,2)}-${tel.slice(2,6)}-${tel.slice(6)}`;
+
+  // Validar INE duplicada
   if(S.registros.some(r=>r.ine===ine)){toast('⚠ Clave INE ya registrada','err');return;}
-  const reg={tipo_reg:'general',secciones:S.gSecciones,nombre:`${nom} ${pat} ${mat}`.trim(),nombre_p:nom,ap_pat:pat,ap_mat:mat,ine,telefono:telF,partido:S.gPartido,notas:not,capturado_por:S.cfg.capturista||'Anónimo',timestamp:new Date().toISOString(),synced:false,sync_error:null};
+
+  // Validar sección única — una sección solo puede tener UN general
+  const secsOcupadas=[];
+  for(const sec of S.gSecciones){
+    // Revisar en locales
+    const enLocal=S.registros.some(r=>r.tipo_reg==='general'&&r.secciones&&r.secciones.includes(sec));
+    // Revisar en Sheets (generalesGlobal)
+    const enSheets=S.generalesGlobal.some(g=>g.secciones&&g.secciones.includes(sec));
+    if(enLocal||enSheets) secsOcupadas.push(sec);
+  }
+  if(secsOcupadas.length>0){
+    toast(`⚠ Sección(es) ya asignadas: ${secsOcupadas.join(', ')}`, 'err');
+    return;
+  }
+
+  const reg={
+    tipo_reg:'general', secciones:S.gSecciones,
+    nombre:`${nom} ${pat} ${mat}`.trim(), nombre_p:nom, ap_pat:pat, ap_mat:mat,
+    ine, telefono:telF, partido:S.gPartido, notas:not,
+    capturado_por:S.cfg.capturista||'Anónimo',
+    timestamp:new Date().toISOString(), synced:false, sync_error:null
+  };
   await dbPut('registros',reg);
   await loadReg();
   toast('✓ General guardado','ok');
   resetGeneral();volverTipo();showScreen('registros');
-  if(S.cfg.scriptUrl && navigator.onLine) syncNow(true);
+  syncOne(reg);
 }
 function resetGeneral(){
   S.gStep=1;S.gSecciones=[];S.gPartido=null;
@@ -1121,13 +1152,26 @@ function searchSec(q,prefijo){
   const secs=[...new Map(S.catalogo.map(c=>[c.seccion,c])).values()];
   const found=secs.filter(s=>String(s.seccion).includes(q)).slice(0,12);
   if(!found.length){r.innerHTML=`<div class="srch-item" style="color:var(--muted)">Sin resultados</div>`;r.classList.add('open');return;}
+
+  // Secciones con general asignado (local + Sheets)
+  const secsConGen=new Set([
+    ...S.registros.filter(r=>r.tipo_reg==='general').flatMap(g=>g.secciones||[]),
+    ...S.generalesGlobal.flatMap(g=>g.secciones||[])
+  ]);
+
   r.innerHTML=found.map(s=>{
     const n=S.catalogo.filter(c=>c.seccion===s.seccion).length;
+    const tieneGen=secsConGen.has(s.seccion);
+    const genTag=tieneGen?`<span style="background:var(--purple-bg);color:var(--purple);font-size:10px;font-weight:700;padding:1px 7px;border-radius:8px;font-family:var(--fh)">GEN</span>`:'';
     let fn;
     if(prefijo==='g') fn=`addGenSec('${s.seccion}')`;
     else if(prefijo==='q') fn=`selQSec('${s.seccion}')`;
     else fn=`selCSec('${s.seccion}')`;
-    return`<div class="srch-item" onclick="${fn}"><span class="sec-badge">${s.seccion}</span><span class="sub">${n} casilla${n>1?'s':''}</span></div>`;
+    return`<div class="srch-item" onclick="${fn}">
+      <span class="sec-badge" style="${tieneGen?'background:var(--purple)':''}">${s.seccion}</span>
+      <span class="sub">${n} casilla${n>1?'s':''}</span>
+      ${genTag}
+    </div>`;
   }).join('');
   r.classList.add('open');
 }
@@ -1371,13 +1415,28 @@ function filt(mode,el){S.filtro=mode;document.querySelectorAll('.fchip').forEach
 // ══════════════════════════════════════════
 function updateDash(){
   const r=S.registros;
-  const cas=r.filter(x=>x.tipo_reg==='casilla').length;
-  const gen=r.filter(x=>x.tipo_reg==='general').length;
   const sync=r.filter(x=>x.synced).length;
   const pend=r.filter(x=>!x.synced&&!x.sync_error).length;
   const errs=r.filter(x=>x.sync_error).length;
-  document.getElementById('dash-total').textContent=cas;
-  document.getElementById('dash-total-gen').textContent=gen;
+
+  // Totales: preferir Sheets si disponibles, sino locales
+  const totalCas=S.estadoGlobal.length>0 ? S.estadoGlobal.length : r.filter(x=>x.tipo_reg==='casilla').length;
+  const totalGen=S.generalesGlobal.length>0 ? S.generalesGlobal.length : r.filter(x=>x.tipo_reg==='general').length;
+  document.getElementById('dash-total').textContent=totalCas;
+  document.getElementById('dash-total-gen').textContent=totalGen;
+
+  // Etiqueta fuente de datos
+  const globalLbl=document.getElementById('dash-global-lbl');
+  if(globalLbl){
+    globalLbl.style.display='block';
+    if(S.estadoTs){
+      const mins=Math.round((new Date()-S.estadoTs)/60000);
+      globalLbl.textContent=`Todo el equipo · Sheets · hace ${mins<1?'<1':mins} min`;
+    }else{
+      globalLbl.textContent='Solo datos locales · actualiza estado para ver el equipo';
+    }
+  }
+
   document.getElementById('st-sync').textContent=sync;
   document.getElementById('st-pend').textContent=pend;
   document.getElementById('st-err').textContent=errs;
@@ -1457,6 +1516,30 @@ function updateDash(){
 // ══════════════════════════════════════════
 // SINCRONIZACIÓN
 // ══════════════════════════════════════════
+// ══════════════════════════════════════════
+// SINCRONIZACIÓN
+// ══════════════════════════════════════════
+// syncOne: sincroniza UN registro específico inmediatamente
+// no depende del flag syncing — para uso post-guardado
+async function syncOne(reg){
+  if(!S.cfg.scriptUrl||!navigator.onLine) return;
+  try{
+    await fetch(S.cfg.scriptUrl,{
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(reg)
+    });
+    reg.synced=true; reg.sync_error=null;
+    await dbPut('registros',reg);
+    await loadReg();
+    toast('✓ Sincronizado con Sheets','ok');
+  }catch(e){
+    reg.sync_error=e.message||'Error de red';
+    await dbPut('registros',reg);
+    await loadReg();
+  }
+}
+
 let syncing=false;
 async function syncNow(silent=false){
   if(syncing)return;
@@ -1643,6 +1726,34 @@ function showOv(msg){document.getElementById('ov-msg').textContent=msg;document.
 function hideOv(){document.getElementById('overlay').classList.remove('show');}
 function exportJSON(){const b=new Blob([JSON.stringify(S.registros,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`representantes_${new Date().toISOString().slice(0,10)}.json`;a.click();}
 async function clearAll(){if(!confirm('¿Borrar TODOS los registros locales?'))return;await dbClear('registros');await loadReg();toast('Registros eliminados','ok');}
+
+async function recuperarDeSheets(){
+  if(!S.cfg.scriptUrl){toast('Configura la URL del Script primero','err');return;}
+  if(!navigator.onLine){toast('Sin conexión a internet','err');return;}
+  if(!confirm('¿Descargar todos los registros desde Google Sheets?\n\nEsto reemplaza los datos locales con los del servidor.')) return;
+  showOv('Recuperando registros de Sheets...');
+  try{
+    const resp=await fetch(S.cfg.scriptUrl+'?action=recuperar');
+    const data=await resp.json();
+    if(data.status!=='OK'){hideOv();toast('Error: '+data.message,'err');return;}
+    await dbClear('registros');
+    let n=0;
+    for(const reg of (data.registros||[])){
+      await dbPut('registros',{...reg, synced:true, sync_error:null});
+      n++;
+    }
+    for(const gen of (data.generales||[])){
+      await dbPut('registros',{...gen, tipo_reg:'general', synced:true, sync_error:null});
+      n++;
+    }
+    await loadReg();
+    hideOv();
+    toast(`✓ ${n} registros recuperados de Sheets`,'ok');
+  }catch(e){
+    hideOv();
+    toast('Error al recuperar: '+e.message,'err');
+  }
+}
 
 // ══════════════════════════════════════════
 // INIT
